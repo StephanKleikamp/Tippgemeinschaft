@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tippgemeinschaft – Gewinnübersicht</title>
+    <style>
+        :root {
+            --primary:      #27ae60;
+            --primary-dark: #1e8449;
+            --secondary:    #2c3e50;
+            --danger:       #e74c3c;
+            --bg:           #f0f4f8;
+            --card:         #ffffff;
+            --text:         #2c3e50;
+            --muted:        #7f8c8d;
+            --border:       #dde3eb;
+            --shadow:       0 2px 12px rgba(0,0,0,0.08);
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* ── Header ────────────────────────────────── */
+        header {
+            background: linear-gradient(135deg, #1a252f 0%, #2c3e50 100%);
+            color: white;
+            padding: 18px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+        }
+        header .brand h1  { font-size: 1.4rem; font-weight: 700; letter-spacing: -0.02em; }
+        header .brand p   { font-size: 0.8rem; opacity: 0.6; margin-top: 2px; }
+        header .tagline   { font-size: 0.75rem; opacity: 0.5; text-align: right; display: none; }
+
+        /* ── Container ──────────────────────────────── */
+        .container { max-width: 1100px; margin: 0 auto; padding: 24px 16px 48px; }
+
+        /* ── Summary Cards ──────────────────────────── */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: 14px;
+            margin-bottom: 28px;
+        }
+        .card {
+            background: var(--card);
+            border-radius: 14px;
+            padding: 20px 22px;
+            box-shadow: var(--shadow);
+        }
+        .card-label {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--muted);
+            margin-bottom: 8px;
+        }
+        .card-value { font-size: 1.9rem; font-weight: 700; line-height: 1; }
+        .card-sub   { font-size: 0.78rem; color: var(--muted); margin-top: 6px; }
+
+        .green { color: var(--primary-dark); }
+        .red   { color: var(--danger); }
+        .blue  { color: #2471a3; }
+
+        /* ── Section header ─────────────────────────── */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+        .section-header h2 { font-size: 1.05rem; color: var(--secondary); }
+        .badge {
+            background: var(--secondary);
+            color: white;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.72rem;
+            font-weight: 600;
+        }
+
+        /* ── Tables ─────────────────────────────────── */
+        .table-wrap { border-radius: 14px; overflow: hidden; box-shadow: var(--shadow); margin-bottom: 28px; }
+        table { width: 100%; border-collapse: collapse; background: var(--card); }
+        th {
+            background: var(--secondary);
+            color: white;
+            padding: 11px 16px;
+            text-align: left;
+            font-size: 0.8rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        td { padding: 11px 16px; border-bottom: 1px solid var(--border); font-size: 0.88rem; }
+        tr:last-child td { border-bottom: none; }
+        tbody tr:hover td { background: #f7f9fc; }
+
+        .positive { color: var(--primary-dark); font-weight: 600; }
+        .negative { color: var(--danger);       font-weight: 600; }
+        .neutral  { color: var(--muted); }
+
+        .total-row td { background: #f2f5f8; font-weight: 700; }
+
+        /* ── Form card ──────────────────────────────── */
+        .form-card {
+            background: var(--card);
+            border-radius: 14px;
+            padding: 22px 24px;
+            box-shadow: var(--shadow);
+            margin-bottom: 28px;
+        }
+        .form-card h2 { font-size: 1.05rem; color: var(--secondary); margin-bottom: 18px; }
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+            gap: 14px;
+            margin-bottom: 16px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--muted);
+            margin-bottom: 5px;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 9px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.92rem;
+            color: var(--text);
+            outline: none;
+            transition: border-color 0.15s;
+            background: #fff;
+        }
+        .form-group input:focus { border-color: var(--primary); }
+
+        /* ── Buttons ────────────────────────────────── */
+        .btn {
+            padding: 9px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.88rem;
+            font-weight: 600;
+            transition: background 0.15s, opacity 0.15s;
+        }
+        .btn:hover { opacity: 0.88; }
+        .btn-primary   { background: var(--primary); color: white; }
+        .btn-secondary { background: #ecf0f1; color: var(--text); }
+        .btn-danger    { background: var(--danger); color: white; }
+        .btn-sm        { padding: 5px 11px; font-size: 0.78rem; }
+
+        /* ── Notification ───────────────────────────── */
+        .notify {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--secondary);
+            color: white;
+            padding: 12px 18px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+            z-index: 200;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: opacity 0.25s, transform 0.25s;
+            pointer-events: none;
+        }
+        .notify.show { opacity: 1; transform: translateY(0); }
+        .notify.success { background: var(--primary-dark); }
+        .notify.error   { background: var(--danger); }
+
+        /* ── Modal ──────────────────────────────────── */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.45);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            width: 100%;
+            max-width: 460px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+        }
+        .modal h2 { margin-bottom: 20px; color: var(--secondary); font-size: 1.15rem; }
+        .modal .form-group { margin-bottom: 12px; }
+        .modal-actions { display: flex; gap: 10px; margin-top: 22px; }
+
+        /* ── Info bar ───────────────────────────────── */
+        .info-bar {
+            background: #eaf4fd;
+            border: 1px solid #aed6f1;
+            border-radius: 10px;
+            padding: 10px 16px;
+            font-size: 0.82rem;
+            color: #1a5276;
+            margin-bottom: 28px;
+        }
+
+        /* ── Responsive ─────────────────────────────── */
+        @media (max-width: 640px) {
+            header { flex-wrap: wrap; }
+            .summary-grid { grid-template-columns: 1fr 1fr; }
+            .card-value { font-size: 1.5rem; }
+            th, td { padding: 9px 10px; font-size: 0.8rem; }
+            .form-grid { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 400px) {
+            .summary-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="brand">
+        <h1>&#127920; Tippgemeinschaft</h1>
+        <p>Lotto 6 aus 49 &nbsp;·&nbsp; Spiel 77 &nbsp;·&nbsp; Super 6 &nbsp;·&nbsp; ab 01.01.2026</p>
+    </div>
+    <button class="btn btn-secondary btn-sm" onclick="openSettings()">&#9881;&#65039; Einstellungen</button>
+</header>
+
+<div class="container">
+
+    <!-- Summary Cards -->
+    <div class="summary-grid" id="summaryCards"></div>
+
+    <!-- Info bar -->
+    <div class="info-bar" id="infoBar"></div>
+
+    <!-- Player Overview -->
+    <div class="section-header">
+        <h2>Spieler-Übersicht</h2>
+        <span class="badge" id="weeksBadge"></span>
+    </div>
+    <div class="table-wrap">
+        <table id="playerTable">
+            <thead>
+                <tr>
+                    <th>Spieler</th>
+                    <th>Kosten-Anteil</th>
+                    <th>Gewinn-Anteil</th>
+                    <th>Bilanz</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <!-- Add Entry Form -->
+    <div class="form-card">
+        <h2>&#10133; Gewinn eintragen</h2>
+        <div class="form-grid">
+            <div class="form-group">
+                <label>Datum (Samstag)</label>
+                <input type="date" id="entryDate">
+            </div>
+            <div class="form-group">
+                <label>6 aus 49 (€)</label>
+                <input type="number" id="win6aus49" placeholder="0,00" min="0" step="0.01">
+            </div>
+            <div class="form-group">
+                <label>Spiel 77 (€)</label>
+                <input type="number" id="winSpiel77" placeholder="0,00" min="0" step="0.01">
+            </div>
+            <div class="form-group">
+                <label>Super 6 (€)</label>
+                <input type="number" id="winSuper6" placeholder="0,00" min="0" step="0.01">
+            </div>
+            <div class="form-group">
+                <label>Notiz (optional)</label>
+                <input type="text" id="entryNote" placeholder="z.B. Klasse 8, 3 Richtige …" maxlength="80">
+            </div>
+        </div>
+        <button class="btn btn-primary" onclick="addEntry()">Eintrag speichern</button>
+    </div>
+
+    <!-- History -->
+    <div class="section-header">
+        <h2>Gewinnhistorie</h2>
+        <span id="totalEntries" style="font-size:0.8rem; color:var(--muted)"></span>
+    </div>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Datum</th>
+                    <th>6 aus 49</th>
+                    <th>Spiel 77</th>
+                    <th>Super 6</th>
+                    <th>Gesamt</th>
+                    <th>Notiz</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="historyBody"></tbody>
+        </table>
+    </div>
+
+</div>
+
+<!-- Settings Modal -->
+<div class="modal-overlay" id="settingsModal">
+    <div class="modal">
+        <h2>&#9881;&#65039; Einstellungen</h2>
+        <div class="form-group">
+            <label>Name Spieler 1</label>
+            <input type="text" id="s-player1" maxlength="30">
+        </div>
+        <div class="form-group">
+            <label>Name Spieler 2</label>
+            <input type="text" id="s-player2" maxlength="30">
+        </div>
+        <div class="form-group">
+            <label>Name Spieler 3</label>
+            <input type="text" id="s-player3" maxlength="30">
+        </div>
+        <div class="form-group">
+            <label>Wöchentliche Kosten gesamt (€)</label>
+            <input type="number" id="s-weeklyCost" step="0.01" min="0.01">
+        </div>
+        <div class="form-group">
+            <label>Startdatum (erster Spieltag)</label>
+            <input type="date" id="s-startDate">
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-primary" onclick="saveSettings()">Speichern</button>
+            <button class="btn btn-secondary" onclick="closeSettings()">Abbrechen</button>
+        </div>
+    </div>
+</div>
+
+<!-- Notification toast -->
+<div class="notify" id="notify"></div>
+
+<script>
+"use strict";
+
+/* ─────────────────────────────────────────
+   State & Defaults
+───────────────────────────────────────── */
+const DEFAULTS = {
+    players:    ['Max', 'Moritz', 'Klaus'],
+    weeklyCost: 13.35,
+    startDate:  '2026-01-03'   // first Saturday ≥ 01.01.2026
+};
+
+let settings = load('tg-settings', DEFAULTS);
+let entries  = load('tg-entries',  []);
+
+/* ─────────────────────────────────────────
+   Persistence helpers
+───────────────────────────────────────── */
+function load(key, fallback) {
+    try { return JSON.parse(localStorage.getItem(key)) || fallback; }
+    catch { return fallback; }
+}
+function persist() {
+    localStorage.setItem('tg-settings', JSON.stringify(settings));
+    localStorage.setItem('tg-entries',  JSON.stringify(entries));
+}
+
+/* ─────────────────────────────────────────
+   Formatting helpers
+───────────────────────────────────────── */
+const euro = n =>
+    new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(n);
+
+function formatDate(str) {
+    const d = new Date(str + 'T12:00:00');
+    return d.toLocaleDateString('de-DE', {
+        weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric'
+    });
+}
+
+function escHtml(s) {
+    return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+/* ─────────────────────────────────────────
+   Business logic
+───────────────────────────────────────── */
+function countSaturdays() {
+    const start = new Date(settings.startDate + 'T12:00:00');
+    const now   = new Date();
+    now.setHours(12, 0, 0, 0);
+    let count = 0;
+    let d = new Date(start);
+    while (d <= now) { count++; d.setDate(d.getDate() + 7); }
+    return count;
+}
+
+const totalCost     = () => countSaturdays() * settings.weeklyCost;
+const totalWinnings = () => entries.reduce((s, e) =>
+    s + (e.win6aus49 || 0) + (e.winSpiel77 || 0) + (e.winSuper6 || 0), 0);
+
+/* ─────────────────────────────────────────
+   Render
+───────────────────────────────────────── */
+function render() {
+    const weeks     = countSaturdays();
+    const cost      = totalCost();
+    const win       = totalWinnings();
+    const balance   = win - cost;
+    const n         = settings.players.length;
+    const perPlayer = balance / n;
+
+    /* Summary cards */
+    document.getElementById('summaryCards').innerHTML = `
+        <div class="card">
+            <div class="card-label">Gesamtkosten</div>
+            <div class="card-value red">${euro(cost)}</div>
+            <div class="card-sub">${weeks}&thinsp;×&thinsp;${euro(settings.weeklyCost)} / Woche</div>
+        </div>
+        <div class="card">
+            <div class="card-label">Gesamtgewinn</div>
+            <div class="card-value green">${euro(win)}</div>
+            <div class="card-sub">${entries.length} Gewinneintrag${entries.length !== 1 ? 'träge' : ''}</div>
+        </div>
+        <div class="card">
+            <div class="card-label">Bilanz (gesamt)</div>
+            <div class="card-value ${balance >= 0 ? 'green' : 'red'}">${euro(balance)}</div>
+            <div class="card-sub">${balance >= 0 ? '✓ Im Plus' : '✗ Im Minus'}</div>
+        </div>
+        <div class="card">
+            <div class="card-label">Bilanz pro Spieler</div>
+            <div class="card-value ${perPlayer >= 0 ? 'green' : 'red'}"
+                 style="font-size:1.55rem">${euro(perPlayer)}</div>
+            <div class="card-sub">je ${euro(cost / n)} Kosten · je ${euro(win / n)} Gewinn</div>
+        </div>
+    `;
+
+    /* Info bar */
+    const start = new Date(settings.startDate + 'T12:00:00');
+    const startFmt = start.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    document.getElementById('infoBar').innerHTML =
+        `Spielzeitraum seit <strong>${startFmt}</strong> &nbsp;·&nbsp; ` +
+        `<strong>${weeks}</strong> Samstage &nbsp;·&nbsp; ` +
+        `8 Spielfelder + Spiel&nbsp;77 + Super&nbsp;6 &nbsp;·&nbsp; ` +
+        `Kosten je Woche: <strong>${euro(settings.weeklyCost)}</strong>`;
+
+    /* Weeks badge */
+    document.getElementById('weeksBadge').textContent = `${weeks} Wochen gespielt`;
+
+    /* Player table */
+    const tbody = document.querySelector('#playerTable tbody');
+    tbody.innerHTML = settings.players.map(p => `
+        <tr>
+            <td><strong>${escHtml(p)}</strong></td>
+            <td class="negative">${euro(cost / n)}</td>
+            <td class="positive">${euro(win  / n)}</td>
+            <td class="${perPlayer >= 0 ? 'positive' : 'negative'}">${euro(perPlayer)}</td>
+        </tr>
+    `).join('') + `
+        <tr class="total-row">
+            <td>Gesamt</td>
+            <td class="negative">${euro(cost)}</td>
+            <td class="positive">${euro(win)}</td>
+            <td class="${balance >= 0 ? 'positive' : 'negative'}">${euro(balance)}</td>
+        </tr>
+    `;
+
+    /* History */
+    const histBody = document.getElementById('historyBody');
+    document.getElementById('totalEntries').textContent =
+        entries.length ? `${entries.length} Einträge` : '';
+
+    if (entries.length === 0) {
+        histBody.innerHTML = `
+            <tr><td colspan="7" style="text-align:center;padding:28px;color:var(--muted)">
+                Noch keine Gewinne eingetragen
+            </td></tr>`;
+        return;
+    }
+
+    const sorted = [...entries].sort((a, b) => b.date.localeCompare(a.date));
+    histBody.innerHTML = sorted.map(e => {
+        const total = (e.win6aus49 || 0) + (e.winSpiel77 || 0) + (e.winSuper6 || 0);
+        return `
+            <tr>
+                <td style="white-space:nowrap">${formatDate(e.date)}</td>
+                <td>${e.win6aus49 ? euro(e.win6aus49) : '<span class="neutral">–</span>'}</td>
+                <td>${e.winSpiel77 ? euro(e.winSpiel77) : '<span class="neutral">–</span>'}</td>
+                <td>${e.winSuper6  ? euro(e.winSuper6)  : '<span class="neutral">–</span>'}</td>
+                <td><strong class="positive">${euro(total)}</strong></td>
+                <td style="color:var(--muted);font-size:0.82rem">${escHtml(e.note || '')}</td>
+                <td>
+                    <button class="btn btn-danger btn-sm"
+                            onclick="deleteEntry('${escHtml(e.id)}')"
+                            title="Eintrag löschen">✕</button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+/* ─────────────────────────────────────────
+   Entry CRUD
+───────────────────────────────────────── */
+function addEntry() {
+    const dateVal = document.getElementById('entryDate').value;
+    const v6      = parseFloat(document.getElementById('win6aus49').value) || 0;
+    const v77     = parseFloat(document.getElementById('winSpiel77').value) || 0;
+    const vs6     = parseFloat(document.getElementById('winSuper6').value)  || 0;
+    const note    = document.getElementById('entryNote').value.trim();
+
+    if (!dateVal)           return toast('Bitte ein Datum auswählen.', 'error');
+    if (v6 + v77 + vs6 <= 0) return toast('Bitte mindestens einen Gewinnbetrag eintragen.', 'error');
+
+    // Check for duplicate date
+    if (entries.some(e => e.date === dateVal)) {
+        if (!confirm(`Für den ${formatDate(dateVal)} gibt es bereits einen Eintrag.\nTrotzdem hinzufügen?`)) return;
+    }
+
+    entries.push({ id: Date.now().toString(), date: dateVal,
+                   win6aus49: v6, winSpiel77: v77, winSuper6: vs6, note });
+    persist();
+
+    document.getElementById('win6aus49').value  = '';
+    document.getElementById('winSpiel77').value = '';
+    document.getElementById('winSuper6').value  = '';
+    document.getElementById('entryNote').value  = '';
+
+    toast(`Gewinn von ${euro(v6 + v77 + vs6)} eingetragen!`, 'success');
+    render();
+}
+
+function deleteEntry(id) {
+    if (!confirm('Diesen Eintrag wirklich löschen?')) return;
+    entries = entries.filter(e => e.id !== id);
+    persist();
+    toast('Eintrag gelöscht.', 'success');
+    render();
+}
+
+/* ─────────────────────────────────────────
+   Settings
+───────────────────────────────────────── */
+function openSettings() {
+    document.getElementById('s-player1').value   = settings.players[0] || '';
+    document.getElementById('s-player2').value   = settings.players[1] || '';
+    document.getElementById('s-player3').value   = settings.players[2] || '';
+    document.getElementById('s-weeklyCost').value = settings.weeklyCost;
+    document.getElementById('s-startDate').value  = settings.startDate;
+    document.getElementById('settingsModal').classList.add('active');
+}
+function closeSettings() {
+    document.getElementById('settingsModal').classList.remove('active');
+}
+function saveSettings() {
+    const p1   = document.getElementById('s-player1').value.trim();
+    const p2   = document.getElementById('s-player2').value.trim();
+    const p3   = document.getElementById('s-player3').value.trim();
+    const cost = parseFloat(document.getElementById('s-weeklyCost').value);
+    const date = document.getElementById('s-startDate').value;
+
+    if (!p1 || !p2 || !p3) return toast('Bitte alle Spielernamen angeben.', 'error');
+    if (!cost || cost <= 0) return toast('Bitte gültige Kosten eingeben.', 'error');
+    if (!date)              return toast('Bitte ein Startdatum angeben.', 'error');
+
+    settings = { players: [p1, p2, p3], weeklyCost: cost, startDate: date };
+    persist();
+    closeSettings();
+    toast('Einstellungen gespeichert.', 'success');
+    render();
+}
+
+/* ─────────────────────────────────────────
+   Toast notification
+───────────────────────────────────────── */
+let toastTimer;
+function toast(msg, type = 'success') {
+    const el = document.getElementById('notify');
+    el.textContent = msg;
+    el.className = `notify ${type} show`;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+/* ─────────────────────────────────────────
+   Date helpers
+───────────────────────────────────────── */
+function lastSaturday() {
+    const d = new Date();
+    const day = d.getDay();          // 0 = Sun, 6 = Sat
+    const diff = day === 6 ? 0 : day + 1;
+    d.setDate(d.getDate() - diff);
+    return d.toISOString().split('T')[0];
+}
+
+/* ─────────────────────────────────────────
+   Init
+───────────────────────────────────────── */
+document.getElementById('entryDate').value = lastSaturday();
+
+// Close modal on overlay click
+document.getElementById('settingsModal').addEventListener('click', function(e) {
+    if (e.target === this) closeSettings();
+});
+
+render();
+</script>
+</body>
+</html>
