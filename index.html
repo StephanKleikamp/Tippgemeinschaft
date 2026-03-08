@@ -39,7 +39,7 @@
         }
         header .brand h1  { font-size: 1.4rem; font-weight: 700; letter-spacing: -0.02em; }
         header .brand p   { font-size: 0.8rem; opacity: 0.6; margin-top: 2px; }
-        header .tagline   { font-size: 0.75rem; opacity: 0.5; text-align: right; display: none; }
+        header .header-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
         /* ── Container ──────────────────────────────── */
         .container { max-width: 1100px; margin: 0 auto; padding: 24px 16px 48px; }
@@ -156,6 +156,8 @@
             font-size: 0.88rem;
             font-weight: 600;
             transition: background 0.15s, opacity 0.15s;
+            text-decoration: none;
+            display: inline-block;
         }
         .btn:hover { opacity: 0.88; }
         .btn-primary   { background: var(--primary); color: white; }
@@ -204,7 +206,10 @@
             width: 100%;
             max-width: 460px;
             box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+            max-height: 90vh;
+            overflow-y: auto;
         }
+        .modal-wide { max-width: 600px; }
         .modal h2 { margin-bottom: 20px; color: var(--secondary); font-size: 1.15rem; }
         .modal .form-group { margin-bottom: 12px; }
         .modal-actions { display: flex; gap: 10px; margin-top: 22px; }
@@ -220,6 +225,116 @@
             margin-bottom: 28px;
         }
 
+        /* ── Calc card ──────────────────────────────── */
+        .calc-card {
+            background: #f8fff9;
+            border: 1px solid #b7e4c7;
+            border-radius: 14px;
+            padding: 22px 24px;
+            box-shadow: var(--shadow);
+            margin-bottom: 28px;
+        }
+        .calc-card h2 { font-size: 1.05rem; color: var(--secondary); margin-bottom: 6px; }
+        .calc-hint {
+            font-size: 0.82rem;
+            color: var(--muted);
+            margin-bottom: 16px;
+        }
+        .drawn-grid {
+            display: flex;
+            gap: 7px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+        .drawn-grid input {
+            width: 50px;
+            text-align: center;
+            padding: 8px 4px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            outline: none;
+        }
+        .drawn-grid input:focus { border-color: var(--primary); }
+        .drawn-grid .divider { color: var(--muted); font-size: 1.1rem; padding: 0 2px; }
+        .drawn-grid .sz-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--muted);
+            letter-spacing: 0.05em;
+        }
+        .drawn-grid input.sz-input { width: 44px; background: #f5f0ff; border-color: #c39bd3; }
+        .calc-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+        .calc-result {
+            display: none;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 14px 16px;
+            margin-top: 16px;
+            font-size: 0.85rem;
+        }
+        .calc-result .result-title { font-weight: 700; margin-bottom: 10px; color: var(--secondary); }
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px 0;
+            border-bottom: 1px solid var(--border);
+            gap: 10px;
+        }
+        .result-row:last-of-type { border-bottom: none; }
+        .result-summary {
+            margin-top: 12px;
+            padding-top: 10px;
+            border-top: 2px solid var(--border);
+            font-size: 0.88rem;
+        }
+
+        /* ── Spielfelder Modal ──────────────────────── */
+        .sf-table { width: 100%; border-collapse: collapse; }
+        .sf-table th {
+            background: #f2f5f8;
+            color: var(--secondary);
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 7px 10px;
+            font-weight: 700;
+        }
+        .sf-table td { padding: 6px 8px; border-bottom: 1px solid var(--border); }
+        .sf-table tr:last-child td { border-bottom: none; }
+        .sf-label { font-size: 0.8rem; font-weight: 700; color: var(--muted); white-space: nowrap; }
+        .sf-nums-input {
+            width: 100%;
+            padding: 7px 10px;
+            border: 1px solid var(--border);
+            border-radius: 7px;
+            font-size: 0.88rem;
+            outline: none;
+        }
+        .sf-nums-input:focus { border-color: var(--primary); }
+        .sf-sz-input {
+            width: 54px;
+            padding: 7px 8px;
+            border: 1px solid #c39bd3;
+            border-radius: 7px;
+            font-size: 0.88rem;
+            text-align: center;
+            outline: none;
+            background: #f5f0ff;
+        }
+        .sf-sz-input:focus { border-color: #8e44ad; }
+        .sf-hint {
+            font-size: 0.78rem;
+            color: var(--muted);
+            margin-bottom: 14px;
+            line-height: 1.5;
+        }
+
         /* ── Responsive ─────────────────────────────── */
         @media (max-width: 640px) {
             header { flex-wrap: wrap; }
@@ -227,6 +342,7 @@
             .card-value { font-size: 1.5rem; }
             th, td { padding: 9px 10px; font-size: 0.8rem; }
             .form-grid { grid-template-columns: 1fr 1fr; }
+            .drawn-grid input { width: 44px; }
         }
         @media (max-width: 400px) {
             .summary-grid { grid-template-columns: 1fr; }
@@ -240,7 +356,10 @@
         <h1>&#127920; Tippgemeinschaft</h1>
         <p>Lotto 6 aus 49 &nbsp;·&nbsp; Spiel 77 &nbsp;·&nbsp; Super 6 &nbsp;·&nbsp; ab 01.01.2026</p>
     </div>
-    <button class="btn btn-secondary btn-sm" onclick="openSettings()">&#9881;&#65039; Einstellungen</button>
+    <div class="header-actions">
+        <button class="btn btn-secondary btn-sm" onclick="openZahlenModal()">&#128290; Meine Zahlen</button>
+        <button class="btn btn-secondary btn-sm" onclick="openSettings()">&#9881;&#65039; Einstellungen</button>
+    </div>
 </header>
 
 <div class="container">
@@ -276,7 +395,7 @@
         <div class="form-grid">
             <div class="form-group">
                 <label>Datum (Samstag)</label>
-                <input type="date" id="entryDate">
+                <input type="date" id="entryDate" onchange="resetCalcResult()">
             </div>
             <div class="form-group">
                 <label>6 aus 49 (€)</label>
@@ -296,6 +415,41 @@
             </div>
         </div>
         <button class="btn btn-primary" onclick="addEntry()">Eintrag speichern</button>
+    </div>
+
+    <!-- Gewinn berechnen -->
+    <div class="calc-card">
+        <h2>&#128270; Gewinn automatisch berechnen</h2>
+        <p class="calc-hint" id="calcHint">Laden …</p>
+
+        <div class="form-group" style="margin-bottom:14px">
+            <label style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);display:block;margin-bottom:8px">
+                Gezogene Zahlen (6 Zahlen + Superzahl)
+            </label>
+            <div class="drawn-grid">
+                <input type="number" id="drawn-0" class="drawn-num" min="1" max="49" placeholder="1">
+                <input type="number" id="drawn-1" class="drawn-num" min="1" max="49" placeholder="2">
+                <input type="number" id="drawn-2" class="drawn-num" min="1" max="49" placeholder="3">
+                <input type="number" id="drawn-3" class="drawn-num" min="1" max="49" placeholder="4">
+                <input type="number" id="drawn-4" class="drawn-num" min="1" max="49" placeholder="5">
+                <input type="number" id="drawn-5" class="drawn-num" min="1" max="49" placeholder="6">
+                <span class="divider">|</span>
+                <span class="sz-label">SZ</span>
+                <input type="number" id="drawn-sz" class="sz-input" min="0" max="9" placeholder="0">
+            </div>
+        </div>
+
+        <div class="calc-actions">
+            <button class="btn btn-primary" onclick="berechneGewinn()">Gewinn berechnen</button>
+            <label class="btn btn-secondary" style="cursor:pointer">
+                CSV importieren
+                <input type="file" accept=".csv,.txt" style="display:none" onchange="handleCSVUpload(event)">
+            </label>
+            <a href="https://www.lotto.de/lotto-6aus49/gewinnzahlen" target="_blank" rel="noopener"
+               class="btn btn-secondary btn-sm" style="align-self:center">Zahlen auf lotto.de &#8599;</a>
+        </div>
+
+        <div class="calc-result" id="calcResult"></div>
     </div>
 
     <!-- History -->
@@ -353,6 +507,31 @@
     </div>
 </div>
 
+<!-- Spielfelder Modal -->
+<div class="modal-overlay" id="zahlenModal">
+    <div class="modal modal-wide">
+        <h2>&#128290; Meine Spielfelder</h2>
+        <p class="sf-hint">
+            Zahlen durch Leerzeichen oder Kommas getrennt eingeben (z.B. <strong>3 10 16 20 30 41</strong>).<br>
+            Superzahl: 0–9. Leere Zeilen werden ignoriert.
+        </p>
+        <table class="sf-table">
+            <thead>
+                <tr>
+                    <th style="width:100px">Spielfeld</th>
+                    <th>6 Zahlen (1–49)</th>
+                    <th style="width:70px">SZ (0–9)</th>
+                </tr>
+            </thead>
+            <tbody id="sfTableBody"></tbody>
+        </table>
+        <div class="modal-actions">
+            <button class="btn btn-primary" onclick="saveZahlen()">Speichern</button>
+            <button class="btn btn-secondary" onclick="closeZahlenModal()">Abbrechen</button>
+        </div>
+    </div>
+</div>
+
 <!-- Notification toast -->
 <div class="notify" id="notify"></div>
 
@@ -368,8 +547,16 @@ const DEFAULTS = {
     startDate:  '2026-01-03'   // first Saturday ≥ 01.01.2026
 };
 
-let settings = load('tg-settings', DEFAULTS);
-let entries  = load('tg-entries',  []);
+let settings    = load('tg-settings',     DEFAULTS);
+let entries     = load('tg-entries',      []);
+let spielfelder = load('tg-spielfelder',  []);
+
+// Ensure always 8 slots
+while (spielfelder.length < 8) spielfelder.push({nums: [], superzahl: null});
+
+// Last calculated amount (for "übernehmen" button)
+let _lastCalcAmount = 0;
+let _lastCalcNote   = '';
 
 /* ─────────────────────────────────────────
    Persistence helpers
@@ -381,6 +568,9 @@ function load(key, fallback) {
 function persist() {
     localStorage.setItem('tg-settings', JSON.stringify(settings));
     localStorage.setItem('tg-entries',  JSON.stringify(entries));
+}
+function persistSpielfelder() {
+    localStorage.setItem('tg-spielfelder', JSON.stringify(spielfelder));
 }
 
 /* ─────────────────────────────────────────
@@ -601,7 +791,7 @@ function toast(msg, type = 'success') {
     el.textContent = msg;
     el.className = `notify ${type} show`;
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 3500);
 }
 
 /* ─────────────────────────────────────────
@@ -616,15 +806,313 @@ function lastSaturday() {
 }
 
 /* ─────────────────────────────────────────
+   Spielfelder Management
+───────────────────────────────────────── */
+function countActiveSpielfelder() {
+    return spielfelder.filter(sf => sf.nums && sf.nums.length === 6).length;
+}
+
+function buildSFTable() {
+    const tbody = document.getElementById('sfTableBody');
+    tbody.innerHTML = '';
+    for (let i = 0; i < 8; i++) {
+        const sf = spielfelder[i] || {nums: [], superzahl: null};
+        const numsVal = sf.nums && sf.nums.length ? sf.nums.join(' ') : '';
+        const szVal   = sf.superzahl !== null && sf.superzahl !== undefined ? sf.superzahl : '';
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td class="sf-label">Spielfeld ${i + 1}</td>
+            <td>
+                <input type="text" id="sf-nums-${i}" class="sf-nums-input"
+                       value="${escHtml(numsVal)}"
+                       placeholder="z.B. 3 10 16 20 30 41" maxlength="25">
+            </td>
+            <td>
+                <input type="number" id="sf-sz-${i}" class="sf-sz-input"
+                       value="${szVal}" min="0" max="9" placeholder="0-9">
+            </td>
+        `;
+        tbody.appendChild(tr);
+    }
+}
+
+function openZahlenModal() {
+    buildSFTable();
+    document.getElementById('zahlenModal').classList.add('active');
+}
+
+function closeZahlenModal() {
+    document.getElementById('zahlenModal').classList.remove('active');
+}
+
+function saveZahlen() {
+    const newSF = [];
+    for (let i = 0; i < 8; i++) {
+        const numsRaw = document.getElementById(`sf-nums-${i}`).value.trim();
+        const szRaw   = document.getElementById(`sf-sz-${i}`).value.trim();
+
+        if (!numsRaw) {
+            newSF.push({nums: [], superzahl: null});
+            continue;
+        }
+
+        const nums = numsRaw.split(/[\s,;]+/).map(Number).filter(n => !isNaN(n) && n > 0);
+        if (nums.length !== 6) {
+            return toast(`Spielfeld ${i + 1}: Bitte genau 6 Zahlen eingeben.`, 'error');
+        }
+        if (nums.some(n => n < 1 || n > 49)) {
+            return toast(`Spielfeld ${i + 1}: Zahlen müssen zwischen 1 und 49 liegen.`, 'error');
+        }
+        if (new Set(nums).size !== 6) {
+            return toast(`Spielfeld ${i + 1}: Zahlen dürfen sich nicht wiederholen.`, 'error');
+        }
+
+        const sz = parseInt(szRaw);
+        if (isNaN(sz) || sz < 0 || sz > 9) {
+            return toast(`Spielfeld ${i + 1}: Bitte eine gültige Superzahl (0–9) eingeben.`, 'error');
+        }
+
+        newSF.push({nums: nums.slice().sort((a, b) => a - b), superzahl: sz});
+    }
+
+    spielfelder = newSF;
+    persistSpielfelder();
+    closeZahlenModal();
+    updateCalcHint();
+    toast(`${countActiveSpielfelder()} Spielfeld(er) gespeichert.`, 'success');
+}
+
+function updateCalcHint() {
+    const hint = document.getElementById('calcHint');
+    if (!hint) return;
+    const active = countActiveSpielfelder();
+    if (active === 0) {
+        hint.innerHTML =
+            'Noch keine Spielfelder hinterlegt. Bitte unter ' +
+            '<button class="btn btn-secondary btn-sm" onclick="openZahlenModal()" ' +
+            'style="vertical-align:middle">&#128290; Meine Zahlen</button> eintragen.';
+    } else {
+        hint.textContent =
+            `${active} Spielfeld(er) hinterlegt. Ziehungszahlen eingeben und Gewinn berechnen lassen.`;
+    }
+}
+
+/* ─────────────────────────────────────────
+   Prize Calculation (6aus49)
+───────────────────────────────────────── */
+// Klasse 8 (3 Richtige) und Klasse 9 (2 Richtige + SZ) haben feste 5 €.
+// Alle anderen Klassen sind pari-mutuel und müssen manuell geprüft werden.
+function getPrizeKlasse(matches, hasSuperzahl) {
+    if (matches === 6 && hasSuperzahl) return {klasse: 1, fixed: false, label: 'Klasse 1 – 6 Richtige + Superzahl'};
+    if (matches === 6)                 return {klasse: 2, fixed: false, label: 'Klasse 2 – 6 Richtige'};
+    if (matches === 5 && hasSuperzahl) return {klasse: 3, fixed: false, label: 'Klasse 3 – 5 Richtige + Superzahl'};
+    if (matches === 5)                 return {klasse: 4, fixed: false, label: 'Klasse 4 – 5 Richtige'};
+    if (matches === 4 && hasSuperzahl) return {klasse: 5, fixed: false, label: 'Klasse 5 – 4 Richtige + Superzahl'};
+    if (matches === 4)                 return {klasse: 6, fixed: false, label: 'Klasse 6 – 4 Richtige'};
+    if (matches === 3 && hasSuperzahl) return {klasse: 7, fixed: false, label: 'Klasse 7 – 3 Richtige + Superzahl'};
+    if (matches === 3)                 return {klasse: 8, fixed: true,  amount: 5.00, label: 'Klasse 8 – 3 Richtige'};
+    if (matches === 2 && hasSuperzahl) return {klasse: 9, fixed: true,  amount: 5.00, label: 'Klasse 9 – 2 Richtige + Superzahl'};
+    return null; // kein Gewinn
+}
+
+function berechneGewinn() {
+    // Ziehungszahlen einlesen
+    const drawnNums = [];
+    for (let i = 0; i < 6; i++) {
+        const n = parseInt(document.getElementById(`drawn-${i}`).value);
+        if (isNaN(n) || n < 1 || n > 49) {
+            return toast(`Gezogene Zahl ${i + 1}: Ungültig. Bitte Zahlen 1–49 eingeben.`, 'error');
+        }
+        drawnNums.push(n);
+    }
+    if (new Set(drawnNums).size !== 6) {
+        return toast('Die 6 Ziehungszahlen müssen alle verschieden sein.', 'error');
+    }
+
+    const drawnSZ = parseInt(document.getElementById('drawn-sz').value);
+    if (isNaN(drawnSZ) || drawnSZ < 0 || drawnSZ > 9) {
+        return toast('Bitte eine gültige Superzahl (0–9) eingeben.', 'error');
+    }
+
+    const activeFields = spielfelder.filter(sf => sf.nums && sf.nums.length === 6);
+    if (activeFields.length === 0) {
+        return toast('Keine Spielfelder hinterlegt. Bitte zuerst "Meine Zahlen" ausfüllen.', 'error');
+    }
+
+    let totalFixed    = 0;
+    let variableCount = 0;
+    const rows = [];
+    const noteParts   = [];
+
+    spielfelder.forEach((sf, idx) => {
+        if (!sf.nums || sf.nums.length !== 6) return;
+
+        const matches      = sf.nums.filter(n => drawnNums.includes(n)).length;
+        const hasSuperzahl = sf.superzahl === drawnSZ;
+        const prize        = getPrizeKlasse(matches, hasSuperzahl);
+
+        if (!prize) {
+            rows.push(
+                `<div class="result-row">` +
+                `<span>Spielfeld ${idx + 1}</span>` +
+                `<span class="neutral">${matches} Treffer – kein Gewinn</span>` +
+                `</div>`
+            );
+        } else if (prize.fixed) {
+            totalFixed += prize.amount;
+            noteParts.push(`SF${idx + 1}: ${prize.label}`);
+            rows.push(
+                `<div class="result-row">` +
+                `<span>Spielfeld ${idx + 1} &mdash; ${escHtml(prize.label)}</span>` +
+                `<span class="positive">${euro(prize.amount)}</span>` +
+                `</div>`
+            );
+        } else {
+            variableCount++;
+            noteParts.push(`SF${idx + 1}: ${prize.label} (bitte prüfen!)`);
+            rows.push(
+                `<div class="result-row">` +
+                `<span>Spielfeld ${idx + 1} &mdash; ${escHtml(prize.label)}</span>` +
+                `<span style="color:#e67e22;font-weight:600">&#9888; Betrag manuell prüfen!</span>` +
+                `</div>`
+            );
+        }
+    });
+
+    // Zusammenfassung
+    let summaryHTML = `<div class="result-summary">`;
+    if (totalFixed === 0 && variableCount === 0) {
+        summaryHTML += `<span class="neutral">Kein Gewinn für ${activeFields.length} Spielfeld(er).</span>`;
+    } else {
+        if (totalFixed > 0) {
+            summaryHTML +=
+                `Automatisch berechnet: <strong class="positive">${euro(totalFixed)}</strong>`;
+        }
+        if (variableCount > 0) {
+            summaryHTML +=
+                (totalFixed > 0 ? '<br>' : '') +
+                `<span style="color:#e67e22">&#9888; ${variableCount} höhere Gewinnklasse(n) ` +
+                `– bitte auf <a href="https://www.lotto.de/lotto-6aus49/gewinnzahlen" ` +
+                `target="_blank" rel="noopener">lotto.de</a> den genauen Betrag prüfen!</span>`;
+        }
+        if (totalFixed > 0) {
+            _lastCalcAmount = totalFixed;
+            _lastCalcNote   = noteParts.join('; ').substring(0, 80);
+            summaryHTML +=
+                `<br><button class="btn btn-primary btn-sm" style="margin-top:10px" ` +
+                `onclick="uebernehmeGewinn()">` +
+                `${euro(totalFixed)} in Formular &uuml;bernehmen</button>`;
+        }
+    }
+    summaryHTML += `</div>`;
+
+    const resultEl = document.getElementById('calcResult');
+    resultEl.innerHTML =
+        `<div class="result-title">Ergebnis f&uuml;r ${activeFields.length} Spielfeld(er):</div>` +
+        rows.join('') + summaryHTML;
+    resultEl.style.display = 'block';
+}
+
+function uebernehmeGewinn() {
+    document.getElementById('win6aus49').value = _lastCalcAmount.toFixed(2);
+    if (!document.getElementById('entryNote').value.trim()) {
+        document.getElementById('entryNote').value = _lastCalcNote;
+    }
+    toast('Betrag in das Formular übernommen!', 'success');
+}
+
+function resetCalcResult() {
+    const el = document.getElementById('calcResult');
+    el.style.display = 'none';
+    el.innerHTML = '';
+}
+
+/* ─────────────────────────────────────────
+   CSV Import (Sachsenlotto / WestLotto)
+   Erwartetes Format (semikolon-getrennt):
+     Datum;Zahl1;Zahl2;Zahl3;Zahl4;Zahl5;Zahl6;Superzahl[;...]
+     z.B.: 08.03.2025;3;10;16;20;30;41;6
+   Datumsformat: DD.MM.YYYY oder YYYY-MM-DD
+───────────────────────────────────────── */
+function handleCSVUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            parseCSVForDate(e.target.result);
+        } catch (err) {
+            toast('CSV konnte nicht gelesen werden: ' + err.message, 'error');
+        }
+    };
+    reader.readAsText(file, 'utf-8');
+    event.target.value = ''; // Reset so same file can be re-selected
+}
+
+function parseCSVForDate(csvText) {
+    const targetISO = document.getElementById('entryDate').value; // YYYY-MM-DD
+    if (!targetISO) {
+        return toast('Bitte zuerst ein Datum im Formular auswählen.', 'error');
+    }
+
+    const [year, month, day] = targetISO.split('-');
+    const targetDE = `${day}.${month}.${year}`; // DD.MM.YYYY
+
+    const lines = csvText.split(/\r?\n/).filter(l => l.trim() && !l.startsWith('#'));
+
+    for (const line of lines) {
+        const sep  = line.includes(';') ? ';' : ',';
+        const cols = line.split(sep).map(c => c.trim().replace(/^["']|["']$/g, ''));
+
+        if (cols.length < 8) continue;
+
+        const dateCol = cols[0];
+        const matches = dateCol === targetDE || dateCol === targetISO ||
+                        dateCol.startsWith(day + '.' + month + '.' + year);
+        if (!matches) continue;
+
+        // Extract 6 numbers (cols 1-6) + Superzahl (col 7)
+        const nums = [];
+        for (let i = 1; i <= 6; i++) {
+            const n = parseInt(cols[i]);
+            if (isNaN(n) || n < 1 || n > 49) { nums.length = 0; break; }
+            nums.push(n);
+        }
+        const sz = parseInt(cols[7]);
+
+        if (nums.length === 6 && !isNaN(sz) && sz >= 0 && sz <= 9) {
+            for (let i = 0; i < 6; i++) {
+                document.getElementById(`drawn-${i}`).value = nums[i];
+            }
+            document.getElementById('drawn-sz').value = sz;
+            resetCalcResult();
+            toast(`Ziehungszahlen für ${targetDE} aus CSV geladen.`, 'success');
+            return;
+        }
+    }
+
+    toast(
+        `Kein passender Eintrag für ${targetDE} in der CSV-Datei gefunden. ` +
+        `Erwartetes Format: Datum;Z1;Z2;Z3;Z4;Z5;Z6;Superzahl`,
+        'error'
+    );
+}
+
+/* ─────────────────────────────────────────
    Init
 ───────────────────────────────────────── */
 document.getElementById('entryDate').value = lastSaturday();
 
-// Close modal on overlay click
+// Close modals on overlay click
 document.getElementById('settingsModal').addEventListener('click', function(e) {
     if (e.target === this) closeSettings();
 });
+document.getElementById('zahlenModal').addEventListener('click', function(e) {
+    if (e.target === this) closeZahlenModal();
+});
 
+updateCalcHint();
 render();
 </script>
 </body>
