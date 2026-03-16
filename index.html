@@ -815,51 +815,57 @@ async function fetchGewinnquoten() {
             if (!m) continue;
             const nextData = JSON.parse(m[1]);
 
-            // Navigate to winning numbers data
+            // winningNumbersData is an OBJECT with numbered keys ('0','1',...'6'),
+            // each containing an array of draw objects. The index for 6aus49 is NOT
+            // stable, so we iterate all keys and filter by gameType.name.
             const wnData = nextData?.props?.pageProps?.winningNumbersData;
-            if (!Array.isArray(wnData)) continue;
+            if (!wnData || typeof wnData !== 'object') continue;
 
-            // Build quoten map: ISO date → { klasse → amount }
             const quotenMap = {};
-            for (const draw of wnData) {
-                const name = draw?.gameType?.name || '';
-                if (!name.includes('6aus49')) continue;
 
-                // Try to find the draw date
-                const drawDate = draw.drawDate || draw.date || draw.datum;
-                if (!drawDate) continue;
+            for (const key of Object.keys(wnData)) {
+                const items = Array.isArray(wnData[key]) ? wnData[key] : [wnData[key]];
+                for (const draw of items) {
+                    const name = draw?.gameType?.name || '';
+                    if (!name.includes('6aus49')) continue;
 
-                // Parse date (try multiple formats)
-                let iso = null;
-                if (/\d{4}-\d{2}-\d{2}/.test(drawDate)) {
-                    iso = drawDate.substring(0, 10);
-                } else if (/\d{2}\.\d{2}\.\d{4}/.test(drawDate)) {
-                    iso = deToISO(drawDate);
-                }
-                if (!iso) continue;
+                    // Draw date: try common field names
+                    const rawDate = draw.drawDate || draw.date || draw.datum || '';
+                    if (!rawDate) continue;
 
-                // Extract quoten (try different field names)
-                const odds = draw.odds || draw.quoten || draw.gewinnquoten ||
-                             draw.prizeTiers || draw.winningClasses || [];
-                if (!Array.isArray(odds) || odds.length === 0) continue;
+                    let iso = null;
+                    if (/\d{4}-\d{2}-\d{2}/.test(rawDate)) {
+                        iso = String(rawDate).substring(0, 10);
+                    } else if (/\d{2}\.\d{2}\.\d{4}/.test(rawDate)) {
+                        iso = deToISO(rawDate);
+                    }
+                    if (!iso) continue;
 
-                const q = {};
-                for (const tier of odds) {
-                    const kl = tier.class || tier.klasse || tier.prizeClass ||
-                               tier.tierNumber || tier.className;
-                    const amt = tier.amount || tier.prize || tier.prizeAmount ||
-                                tier.quote || tier.gewinnbetrag;
-                    const klNum = parseInt(kl);
-                    const amtNum = parseFloat(amt);
-                    if (klNum >= 1 && klNum <= 9 && amtNum > 0) {
-                        q[klNum] = amtNum;
+                    // Gewinnquoten: try multiple possible field names
+                    const odds = draw.odds || draw.quoten || draw.gewinnquoten ||
+                                 draw.prizeTiers || draw.winningClasses || [];
+                    if (!Array.isArray(odds) || odds.length === 0) continue;
+
+                    const q = {};
+                    for (const tier of odds) {
+                        // Class number: various possible field names
+                        const kl = tier.class || tier.klasse || tier.prizeClass ||
+                                   tier.tierNumber || tier.className;
+                        // Prize amount: various possible field names
+                        const amt = tier.amount || tier.prize || tier.prizeAmount ||
+                                    tier.quote || tier.gewinnbetrag;
+                        const klNum = parseInt(kl);
+                        const amtNum = parseFloat(amt);
+                        if (klNum >= 1 && klNum <= 9 && amtNum > 0) {
+                            q[klNum] = amtNum;
+                        }
+                    }
+                    if (Object.keys(q).length > 0) {
+                        quotenMap[iso] = q;
                     }
                 }
-                if (Object.keys(q).length > 0) {
-                    quotenMap[iso] = q;
-                }
             }
-            return quotenMap;
+            if (Object.keys(quotenMap).length > 0) return quotenMap;
         } catch {
             continue;
         }
