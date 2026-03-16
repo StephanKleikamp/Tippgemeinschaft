@@ -57,108 +57,40 @@
             padding: 20px 22px;
             box-shadow: var(--shadow);
         }
-        .card-label {
-            font-size: 0.72rem;
-            text-transform: uppercase;
-            letter-spacing: 0.06em;
-            color: var(--muted);
-            margin-bottom: 8px;
-        }
+        .card-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 8px; }
         .card-value { font-size: 1.9rem; font-weight: 700; line-height: 1; }
         .card-sub   { font-size: 0.78rem; color: var(--muted); margin-top: 6px; }
 
         .green { color: var(--primary-dark); }
         .red   { color: var(--danger); }
-        .blue  { color: #2471a3; }
 
         /* ── Section header ─────────────────────────── */
-        .section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 14px;
-        }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
         .section-header h2 { font-size: 1.05rem; color: var(--secondary); }
-        .badge {
-            background: var(--secondary);
-            color: white;
-            padding: 3px 10px;
-            border-radius: 20px;
-            font-size: 0.72rem;
-            font-weight: 600;
-        }
+        .badge { background: var(--secondary); color: white; padding: 3px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 600; }
 
         /* ── Tables ─────────────────────────────────── */
         .table-wrap { border-radius: 14px; overflow: hidden; box-shadow: var(--shadow); margin-bottom: 28px; }
         table { width: 100%; border-collapse: collapse; background: var(--card); }
-        th {
-            background: var(--secondary);
-            color: white;
-            padding: 11px 16px;
-            text-align: left;
-            font-size: 0.8rem;
-            font-weight: 600;
-            white-space: nowrap;
-        }
+        th { background: var(--secondary); color: white; padding: 11px 16px; text-align: left; font-size: 0.8rem; font-weight: 600; white-space: nowrap; }
         td { padding: 11px 16px; border-bottom: 1px solid var(--border); font-size: 0.88rem; }
         tr:last-child td { border-bottom: none; }
         tbody tr:hover td { background: #f7f9fc; }
-
         .positive { color: var(--primary-dark); font-weight: 600; }
-        .negative { color: var(--danger);       font-weight: 600; }
+        .negative { color: var(--danger); font-weight: 600; }
         .neutral  { color: var(--muted); }
-
         .total-row td { background: #f2f5f8; font-weight: 700; }
 
         /* ── Form card ──────────────────────────────── */
-        .form-card {
-            background: var(--card);
-            border-radius: 14px;
-            padding: 22px 24px;
-            box-shadow: var(--shadow);
-            margin-bottom: 28px;
-        }
+        .form-card { background: var(--card); border-radius: 14px; padding: 22px 24px; box-shadow: var(--shadow); margin-bottom: 28px; }
         .form-card h2 { font-size: 1.05rem; color: var(--secondary); margin-bottom: 18px; }
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
-            gap: 14px;
-            margin-bottom: 16px;
-        }
-        .form-group label {
-            display: block;
-            font-size: 0.72rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--muted);
-            margin-bottom: 5px;
-        }
-        .form-group input {
-            width: 100%;
-            padding: 9px 12px;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            font-size: 0.92rem;
-            color: var(--text);
-            outline: none;
-            transition: border-color 0.15s;
-            background: #fff;
-        }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(175px, 1fr)); gap: 14px; margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 5px; }
+        .form-group input { width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.92rem; color: var(--text); outline: none; transition: border-color 0.15s; background: #fff; }
         .form-group input:focus { border-color: var(--primary); }
 
         /* ── Buttons ────────────────────────────────── */
-        .btn {
-            padding: 9px 20px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 0.88rem;
-            font-weight: 600;
-            transition: background 0.15s, opacity 0.15s;
-            text-decoration: none;
-            display: inline-block;
-        }
+        .btn { padding: 9px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 0.88rem; font-weight: 600; transition: background 0.15s, opacity 0.15s; text-decoration: none; display: inline-block; }
         .btn:hover { opacity: 0.88; }
         .btn-primary   { background: var(--primary); color: white; }
         .btn-secondary { background: #ecf0f1; color: var(--text); }
@@ -166,209 +98,74 @@
         .btn-sm        { padding: 5px 11px; font-size: 0.78rem; }
 
         /* ── Notification ───────────────────────────── */
-        .notify {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: var(--secondary);
-            color: white;
-            padding: 12px 18px;
-            border-radius: 10px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-            z-index: 200;
-            opacity: 0;
-            transform: translateY(-10px);
-            transition: opacity 0.25s, transform 0.25s;
-            pointer-events: none;
-        }
+        .notify { position: fixed; top: 20px; right: 20px; background: var(--secondary); color: white; padding: 12px 18px; border-radius: 10px; font-size: 0.85rem; font-weight: 600; box-shadow: 0 4px 16px rgba(0,0,0,0.2); z-index: 200; opacity: 0; transform: translateY(-10px); transition: opacity 0.25s, transform 0.25s; pointer-events: none; max-width: 380px; }
         .notify.show { opacity: 1; transform: translateY(0); }
         .notify.success { background: var(--primary-dark); }
         .notify.error   { background: var(--danger); }
 
         /* ── Modal ──────────────────────────────────── */
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.45);
-            z-index: 100;
-            align-items: center;
-            justify-content: center;
-            padding: 16px;
-        }
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 100; align-items: center; justify-content: center; padding: 16px; }
         .modal-overlay.active { display: flex; }
-        .modal {
-            background: white;
-            border-radius: 16px;
-            padding: 30px;
-            width: 100%;
-            max-width: 460px;
-            box-shadow: 0 12px 40px rgba(0,0,0,0.2);
-            max-height: 90vh;
-            overflow-y: auto;
-        }
+        .modal { background: white; border-radius: 16px; padding: 30px; width: 100%; max-width: 460px; box-shadow: 0 12px 40px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto; }
         .modal-wide { max-width: 600px; }
         .modal h2 { margin-bottom: 20px; color: var(--secondary); font-size: 1.15rem; }
         .modal .form-group { margin-bottom: 12px; }
         .modal-actions { display: flex; gap: 10px; margin-top: 22px; }
 
         /* ── Info bar ───────────────────────────────── */
-        .info-bar {
-            background: #eaf4fd;
-            border: 1px solid #aed6f1;
-            border-radius: 10px;
-            padding: 10px 16px;
-            font-size: 0.82rem;
-            color: #1a5276;
-            margin-bottom: 28px;
-        }
+        .info-bar { background: #eaf4fd; border: 1px solid #aed6f1; border-radius: 10px; padding: 10px 16px; font-size: 0.82rem; color: #1a5276; margin-bottom: 28px; }
 
         /* ── Win Banner ────────────────────────────── */
-        .win-banner {
-            display: none;
-            background: linear-gradient(135deg, #d5f5e3 0%, #abebc6 100%);
-            border: 2px solid var(--primary);
-            border-radius: 14px;
-            padding: 18px 22px;
-            margin-bottom: 28px;
-            box-shadow: var(--shadow);
-        }
+        .win-banner { display: none; background: linear-gradient(135deg, #d5f5e3 0%, #abebc6 100%); border: 2px solid var(--primary); border-radius: 14px; padding: 18px 22px; margin-bottom: 28px; box-shadow: var(--shadow); }
         .win-banner.active { display: block; }
         .win-banner h3 { color: var(--primary-dark); font-size: 1rem; margin-bottom: 10px; }
-        .win-banner .win-details { font-size: 0.88rem; margin-bottom: 12px; line-height: 1.6; }
-        .win-banner .win-total { font-size: 1.3rem; font-weight: 700; color: var(--primary-dark); margin-bottom: 12px; }
+        .win-banner .win-line { font-size: 0.88rem; line-height: 1.8; }
+        .win-banner .win-total { font-size: 1.3rem; font-weight: 700; color: var(--primary-dark); margin: 10px 0; }
         .win-banner .win-actions { display: flex; gap: 10px; flex-wrap: wrap; }
 
         /* ── Auto-check status ─────────────────────── */
-        .auto-status {
-            font-size: 0.78rem;
-            color: var(--muted);
-            padding: 4px 0;
-            margin-bottom: 8px;
-        }
-        .auto-status .spinner {
-            display: inline-block;
-            width: 12px; height: 12px;
-            border: 2px solid var(--border);
-            border-top-color: var(--primary);
-            border-radius: 50%;
-            animation: spin 0.6s linear infinite;
-            vertical-align: middle;
-            margin-right: 4px;
-        }
+        .auto-status { font-size: 0.78rem; color: var(--muted); padding: 4px 0; margin-bottom: 8px; }
+        .spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.6s linear infinite; vertical-align: middle; margin-right: 4px; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
         /* ── Calc card ──────────────────────────────── */
-        .calc-card {
-            background: #f8fff9;
-            border: 1px solid #b7e4c7;
-            border-radius: 14px;
-            padding: 22px 24px;
-            box-shadow: var(--shadow);
-            margin-bottom: 28px;
-        }
+        .calc-card { background: #f8fff9; border: 1px solid #b7e4c7; border-radius: 14px; padding: 22px 24px; box-shadow: var(--shadow); margin-bottom: 28px; }
         .calc-card h2 { font-size: 1.05rem; color: var(--secondary); margin-bottom: 6px; }
-        .calc-hint {
-            font-size: 0.82rem;
-            color: var(--muted);
-            margin-bottom: 16px;
-        }
-        .drawn-grid {
-            display: flex;
-            gap: 7px;
-            flex-wrap: wrap;
-            align-items: center;
-            margin-bottom: 14px;
-        }
-        .drawn-grid input {
-            width: 50px;
-            text-align: center;
-            padding: 8px 4px;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            font-size: 0.95rem;
-            font-weight: 600;
-            outline: none;
-        }
+        .calc-hint { font-size: 0.82rem; color: var(--muted); margin-bottom: 16px; }
+        .drawn-grid { display: flex; gap: 7px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+        .drawn-grid input { width: 50px; text-align: center; padding: 8px 4px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.95rem; font-weight: 600; outline: none; }
         .drawn-grid input:focus { border-color: var(--primary); }
         .drawn-grid .divider { color: var(--muted); font-size: 1.1rem; padding: 0 2px; }
-        .drawn-grid .sz-label {
-            font-size: 0.7rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            color: var(--muted);
-            letter-spacing: 0.05em;
-        }
+        .drawn-grid .sz-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: var(--muted); }
         .drawn-grid input.sz-input { width: 44px; background: #f5f0ff; border-color: #c39bd3; }
         .calc-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-        .calc-result {
-            display: none;
-            background: white;
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 14px 16px;
-            margin-top: 16px;
-            font-size: 0.85rem;
-        }
+        .calc-result { display: none; background: white; border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin-top: 16px; font-size: 0.85rem; }
         .calc-result .result-title { font-weight: 700; margin-bottom: 10px; color: var(--secondary); }
-        .result-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 5px 0;
-            border-bottom: 1px solid var(--border);
-            gap: 10px;
-        }
+        .result-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid var(--border); gap: 10px; }
         .result-row:last-of-type { border-bottom: none; }
-        .result-summary {
-            margin-top: 12px;
-            padding-top: 10px;
-            border-top: 2px solid var(--border);
-            font-size: 0.88rem;
-        }
+        .result-summary { margin-top: 12px; padding-top: 10px; border-top: 2px solid var(--border); font-size: 0.88rem; }
 
         /* ── Spielfelder Modal ──────────────────────── */
         .sf-table { width: 100%; border-collapse: collapse; }
-        .sf-table th {
-            background: #f2f5f8;
-            color: var(--secondary);
-            font-size: 0.72rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            padding: 7px 10px;
-            font-weight: 700;
-        }
+        .sf-table th { background: #f2f5f8; color: var(--secondary); font-size: 0.72rem; text-transform: uppercase; padding: 7px 10px; font-weight: 700; }
         .sf-table td { padding: 6px 8px; border-bottom: 1px solid var(--border); }
         .sf-table tr:last-child td { border-bottom: none; }
         .sf-label { font-size: 0.8rem; font-weight: 700; color: var(--muted); white-space: nowrap; }
-        .sf-nums-input {
-            width: 100%;
-            padding: 7px 10px;
-            border: 1px solid var(--border);
-            border-radius: 7px;
-            font-size: 0.88rem;
-            outline: none;
-        }
+        .sf-nums-input { width: 100%; padding: 7px 10px; border: 1px solid var(--border); border-radius: 7px; font-size: 0.88rem; outline: none; }
         .sf-nums-input:focus { border-color: var(--primary); }
-        .sf-sz-input {
-            width: 54px;
-            padding: 7px 8px;
-            border: 1px solid #c39bd3;
-            border-radius: 7px;
-            font-size: 0.88rem;
-            text-align: center;
-            outline: none;
-            background: #f5f0ff;
-        }
+        .sf-sz-input { width: 54px; padding: 7px 8px; border: 1px solid #c39bd3; border-radius: 7px; font-size: 0.88rem; text-align: center; outline: none; background: #f5f0ff; }
         .sf-sz-input:focus { border-color: #8e44ad; }
-        .sf-hint {
-            font-size: 0.78rem;
-            color: var(--muted);
-            margin-bottom: 14px;
-            line-height: 1.5;
-        }
+        .sf-hint { font-size: 0.78rem; color: var(--muted); margin-bottom: 14px; line-height: 1.5; }
+
+        /* ── Login Screen ──────────────────────────── */
+        .login-wrap { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+        .login-box { background: white; border-radius: 16px; padding: 40px; max-width: 380px; width: 100%; box-shadow: 0 8px 30px rgba(0,0,0,0.12); text-align: center; }
+        .login-box h1 { font-size: 1.3rem; color: var(--secondary); margin-bottom: 6px; }
+        .login-box .sub { font-size: 0.85rem; color: var(--muted); margin-bottom: 24px; }
+        .login-box input { width: 100%; padding: 12px 16px; border: 1px solid var(--border); border-radius: 8px; font-size: 1rem; outline: none; margin-bottom: 14px; text-align: center; }
+        .login-box input:focus { border-color: var(--primary); }
+        .login-box .btn { width: 100%; padding: 12px; font-size: 1rem; }
+        .login-error { color: var(--danger); font-size: 0.85rem; margin-bottom: 10px; }
 
         /* ── Responsive ─────────────────────────────── */
         @media (max-width: 640px) {
@@ -386,51 +183,58 @@
 </head>
 <body>
 
+<!-- ═══ Login Screen ═══ -->
+<div id="loginScreen" class="login-wrap">
+    <div class="login-box">
+        <h1>&#127920; Tippgemeinschaft</h1>
+        <p class="sub">Lotto 6 aus 49 · Spiel 77 · Super 6</p>
+        <div class="login-error" id="loginError"></div>
+        <input type="password" id="loginPassword" placeholder="Passwort eingeben" autofocus
+               onkeydown="if(event.key==='Enter')doLogin()">
+        <button class="btn btn-primary" onclick="doLogin()">Anmelden</button>
+    </div>
+</div>
+
+<!-- ═══ Main App (hidden until login) ═══ -->
+<div id="appMain" style="display:none">
+
 <header>
     <div class="brand">
         <h1>&#127920; Tippgemeinschaft</h1>
-        <p>Lotto 6 aus 49 &nbsp;·&nbsp; Spiel 77 &nbsp;·&nbsp; Super 6 &nbsp;·&nbsp; ab 01.01.2026</p>
+        <p>Lotto 6 aus 49 &nbsp;·&nbsp; Spiel 77 &nbsp;·&nbsp; Super 6</p>
     </div>
     <div class="header-actions">
+        <button class="btn btn-secondary btn-sm" onclick="runAutoCheck()">&#128260; Archiv pr&uuml;fen</button>
         <button class="btn btn-secondary btn-sm" onclick="openZahlenModal()">&#128290; Meine Zahlen</button>
         <button class="btn btn-secondary btn-sm" onclick="openSettings()">&#9881;&#65039; Einstellungen</button>
+        <button class="btn btn-secondary btn-sm" onclick="doLogout()">Abmelden</button>
     </div>
 </header>
 
 <div class="container">
 
-    <!-- Auto-check status -->
     <div class="auto-status" id="autoStatus"></div>
 
-    <!-- Summary Cards -->
     <div class="summary-grid" id="summaryCards"></div>
 
-    <!-- Win Banner (auto-detected wins) -->
+    <!-- Win Banner -->
     <div class="win-banner" id="winBanner">
-        <h3>&#127881; Gewinn erkannt!</h3>
-        <div class="win-details" id="winDetails"></div>
+        <h3>&#127881; Gewinne erkannt!</h3>
+        <div class="win-line" id="winDetails"></div>
         <div class="win-total" id="winTotal"></div>
         <div class="win-actions" id="winActions"></div>
     </div>
 
-    <!-- Info bar -->
     <div class="info-bar" id="infoBar"></div>
 
     <!-- Player Overview -->
     <div class="section-header">
-        <h2>Spieler-Übersicht</h2>
+        <h2>Spieler-&Uuml;bersicht</h2>
         <span class="badge" id="weeksBadge"></span>
     </div>
     <div class="table-wrap">
         <table id="playerTable">
-            <thead>
-                <tr>
-                    <th>Spieler</th>
-                    <th>Kosten-Anteil</th>
-                    <th>Gewinn-Anteil</th>
-                    <th>Bilanz</th>
-                </tr>
-            </thead>
+            <thead><tr><th>Spieler</th><th>Kosten-Anteil</th><th>Gewinn-Anteil</th><th>Bilanz</th></tr></thead>
             <tbody></tbody>
         </table>
     </div>
@@ -439,116 +243,67 @@
     <div class="form-card">
         <h2>&#10133; Gewinn eintragen</h2>
         <div class="form-grid">
-            <div class="form-group">
-                <label>Datum (Samstag)</label>
-                <input type="date" id="entryDate" onchange="resetCalcResult()">
-            </div>
-            <div class="form-group">
-                <label>6 aus 49 (€)</label>
-                <input type="number" id="win6aus49" placeholder="0,00" min="0" step="0.01">
-            </div>
-            <div class="form-group">
-                <label>Spiel 77 (€)</label>
-                <input type="number" id="winSpiel77" placeholder="0,00" min="0" step="0.01">
-            </div>
-            <div class="form-group">
-                <label>Super 6 (€)</label>
-                <input type="number" id="winSuper6" placeholder="0,00" min="0" step="0.01">
-            </div>
-            <div class="form-group">
-                <label>Notiz (optional)</label>
-                <input type="text" id="entryNote" placeholder="z.B. Klasse 8, 3 Richtige …" maxlength="80">
-            </div>
+            <div class="form-group"><label>Datum (Samstag)</label><input type="date" id="entryDate"></div>
+            <div class="form-group"><label>6 aus 49 (&euro;)</label><input type="number" id="win6aus49" placeholder="0,00" min="0" step="0.01"></div>
+            <div class="form-group"><label>Spiel 77 (&euro;)</label><input type="number" id="winSpiel77" placeholder="0,00" min="0" step="0.01"></div>
+            <div class="form-group"><label>Super 6 (&euro;)</label><input type="number" id="winSuper6" placeholder="0,00" min="0" step="0.01"></div>
+            <div class="form-group"><label>Notiz (optional)</label><input type="text" id="entryNote" placeholder="z.B. Klasse 8, 3 Richtige …" maxlength="80"></div>
         </div>
         <button class="btn btn-primary" onclick="addEntry()">Eintrag speichern</button>
     </div>
 
-    <!-- Gewinn berechnen (manuell) -->
+    <!-- Manual Calc -->
     <div class="calc-card">
         <h2>&#128270; Gewinn manuell berechnen</h2>
-        <p class="calc-hint" id="calcHint">Laden …</p>
-
+        <p class="calc-hint" id="calcHint"></p>
         <div class="form-group" style="margin-bottom:14px">
-            <label style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);display:block;margin-bottom:8px">
-                Gezogene Zahlen (6 Zahlen + Superzahl)
-            </label>
+            <label style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);display:block;margin-bottom:8px">Gezogene Zahlen (6 + Superzahl)</label>
             <div class="drawn-grid">
-                <input type="number" id="drawn-0" class="drawn-num" min="1" max="49" placeholder="1">
-                <input type="number" id="drawn-1" class="drawn-num" min="1" max="49" placeholder="2">
-                <input type="number" id="drawn-2" class="drawn-num" min="1" max="49" placeholder="3">
-                <input type="number" id="drawn-3" class="drawn-num" min="1" max="49" placeholder="4">
-                <input type="number" id="drawn-4" class="drawn-num" min="1" max="49" placeholder="5">
-                <input type="number" id="drawn-5" class="drawn-num" min="1" max="49" placeholder="6">
+                <input type="number" id="drawn-0" min="1" max="49" placeholder="1">
+                <input type="number" id="drawn-1" min="1" max="49" placeholder="2">
+                <input type="number" id="drawn-2" min="1" max="49" placeholder="3">
+                <input type="number" id="drawn-3" min="1" max="49" placeholder="4">
+                <input type="number" id="drawn-4" min="1" max="49" placeholder="5">
+                <input type="number" id="drawn-5" min="1" max="49" placeholder="6">
                 <span class="divider">|</span>
                 <span class="sz-label">SZ</span>
                 <input type="number" id="drawn-sz" class="sz-input" min="0" max="9" placeholder="0">
             </div>
         </div>
-
         <div class="calc-actions">
             <button class="btn btn-primary" onclick="berechneGewinn()">Gewinn berechnen</button>
-            <label class="btn btn-secondary" style="cursor:pointer">
-                CSV importieren
-                <input type="file" accept=".csv,.txt" style="display:none" onchange="handleCSVUpload(event)">
-            </label>
-            <a href="https://www.lotto.de/lotto-6aus49/gewinnzahlen" target="_blank" rel="noopener"
-               class="btn btn-secondary btn-sm" style="align-self:center">Zahlen auf lotto.de &#8599;</a>
+            <a href="https://www.lotto.de/lotto-6aus49/gewinnzahlen" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">Zahlen auf lotto.de &#8599;</a>
         </div>
-
         <div class="calc-result" id="calcResult"></div>
     </div>
 
     <!-- History -->
     <div class="section-header">
         <h2>Gewinnhistorie</h2>
-        <span id="totalEntries" style="font-size:0.8rem; color:var(--muted)"></span>
+        <span id="totalEntries" style="font-size:0.8rem;color:var(--muted)"></span>
     </div>
     <div class="table-wrap">
         <table>
-            <thead>
-                <tr>
-                    <th>Datum</th>
-                    <th>6 aus 49</th>
-                    <th>Spiel 77</th>
-                    <th>Super 6</th>
-                    <th>Gesamt</th>
-                    <th>Notiz</th>
-                    <th></th>
-                </tr>
-            </thead>
+            <thead><tr><th>Datum</th><th>6 aus 49</th><th>Spiel 77</th><th>Super 6</th><th>Gesamt</th><th>Notiz</th><th></th></tr></thead>
             <tbody id="historyBody"></tbody>
         </table>
     </div>
 
 </div>
+</div><!-- /appMain -->
 
 <!-- Settings Modal -->
 <div class="modal-overlay" id="settingsModal">
     <div class="modal">
         <h2>&#9881;&#65039; Einstellungen</h2>
-        <div class="form-group">
-            <label>Name Spieler 1</label>
-            <input type="text" id="s-player1" maxlength="30">
-        </div>
-        <div class="form-group">
-            <label>Name Spieler 2</label>
-            <input type="text" id="s-player2" maxlength="30">
-        </div>
-        <div class="form-group">
-            <label>Name Spieler 3</label>
-            <input type="text" id="s-player3" maxlength="30">
-        </div>
-        <div class="form-group">
-            <label>Wöchentliche Kosten gesamt (€)</label>
-            <input type="number" id="s-weeklyCost" step="0.01" min="0.01">
-        </div>
-        <div class="form-group">
-            <label>Startdatum (erster Spieltag)</label>
-            <input type="date" id="s-startDate">
-        </div>
+        <div class="form-group"><label>Name Spieler 1</label><input type="text" id="s-player1" maxlength="30"></div>
+        <div class="form-group"><label>Name Spieler 2</label><input type="text" id="s-player2" maxlength="30"></div>
+        <div class="form-group"><label>Name Spieler 3</label><input type="text" id="s-player3" maxlength="30"></div>
+        <div class="form-group"><label>W&ouml;chentliche Kosten gesamt (&euro;)</label><input type="number" id="s-weeklyCost" step="0.01" min="0.01"></div>
+        <div class="form-group"><label>Startdatum (erster Spieltag)</label><input type="date" id="s-startDate"></div>
         <div class="modal-actions">
             <button class="btn btn-primary" onclick="saveSettings()">Speichern</button>
-            <button class="btn btn-secondary" onclick="closeSettings()">Abbrechen</button>
+            <button class="btn btn-secondary" onclick="closeModal('settingsModal')">Abbrechen</button>
         </div>
     </div>
 </div>
@@ -557,960 +312,520 @@
 <div class="modal-overlay" id="zahlenModal">
     <div class="modal modal-wide">
         <h2>&#128290; Meine Spielfelder</h2>
-        <p class="sf-hint">
-            Zahlen durch Leerzeichen oder Kommas getrennt eingeben (z.B. <strong>3 10 16 20 30 41</strong>).<br>
-            Superzahl: 0–9. Leere Zeilen werden ignoriert.
-        </p>
+        <p class="sf-hint">Zahlen durch Leerzeichen getrennt eingeben (z.B. <strong>3 10 16 20 30 41</strong>). Superzahl: 0–9.</p>
         <table class="sf-table">
-            <thead>
-                <tr>
-                    <th style="width:100px">Spielfeld</th>
-                    <th>6 Zahlen (1–49)</th>
-                    <th style="width:70px">SZ (0–9)</th>
-                </tr>
-            </thead>
+            <thead><tr><th style="width:100px">Spielfeld</th><th>6 Zahlen (1–49)</th><th style="width:70px">SZ (0–9)</th></tr></thead>
             <tbody id="sfTableBody"></tbody>
         </table>
         <div class="modal-actions">
             <button class="btn btn-primary" onclick="saveZahlen()">Speichern</button>
-            <button class="btn btn-secondary" onclick="closeZahlenModal()">Abbrechen</button>
+            <button class="btn btn-secondary" onclick="closeModal('zahlenModal')">Abbrechen</button>
         </div>
     </div>
 </div>
 
-<!-- Notification toast -->
 <div class="notify" id="notify"></div>
 
 <script>
 "use strict";
 
 /* ─────────────────────────────────────────
-   State & Defaults
+   State (loaded from server)
 ───────────────────────────────────────── */
-const DEFAULTS = {
-    players:    ['Max', 'Moritz', 'Klaus'],
-    weeklyCost: 13.35,
-    startDate:  '2026-01-03'   // first Saturday ≥ 01.01.2026
-};
-
-let settings    = load('tg-settings',     DEFAULTS);
-let entries     = load('tg-entries',      []);
-let spielfelder = load('tg-spielfelder',  []);
-
-// Ensure 8 slots
-while (spielfelder.length < 8) spielfelder.push({nums: [], superzahl: null});
-
-// Cache for fetched draw archive
-let _drawArchive = null;
-// Pending auto-detected wins (for banner)
-let _pendingWins = [];
-// Last calculated amount for manual calc
-let _lastCalcAmount = 0;
-let _lastCalcNote   = '';
+let settings    = null;
+let entries     = [];
+let spielfelder = [];
 
 /* ─────────────────────────────────────────
-   Persistence helpers
+   API Helper
 ───────────────────────────────────────── */
-function load(key, fallback) {
-    try { return JSON.parse(localStorage.getItem(key)) || fallback; }
-    catch { return fallback; }
-}
-function persist() {
-    localStorage.setItem('tg-settings', JSON.stringify(settings));
-    localStorage.setItem('tg-entries',  JSON.stringify(entries));
-}
-function persistSpielfelder() {
-    localStorage.setItem('tg-spielfelder', JSON.stringify(spielfelder));
+async function api(action, opts = {}) {
+    const url = 'api.php?action=' + action + (opts.params || '');
+    const fetchOpts = { method: opts.method || 'GET' };
+    if (opts.body) {
+        fetchOpts.method = 'POST';
+        fetchOpts.headers = { 'Content-Type': 'application/json' };
+        fetchOpts.body = JSON.stringify(opts.body);
+    }
+    if (opts.method === 'DELETE') fetchOpts.method = 'DELETE';
+    const resp = await fetch(url, fetchOpts);
+    const data = await resp.json();
+    if (!resp.ok && data.error) throw new Error(data.error);
+    return data;
 }
 
 /* ─────────────────────────────────────────
-   Formatting helpers
+   Auth
 ───────────────────────────────────────── */
-const euro = n =>
-    new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(n);
+async function checkAuth() {
+    try {
+        const data = await api('check-auth');
+        if (data.ok) {
+            await loadAllData();
+            showApp();
+        } else {
+            showLogin();
+        }
+    } catch {
+        showLogin();
+    }
+}
+
+async function doLogin() {
+    const pw = document.getElementById('loginPassword').value;
+    if (!pw) return;
+    try {
+        await api('login', { body: { password: pw } });
+        document.getElementById('loginError').textContent = '';
+        await loadAllData();
+        showApp();
+    } catch (e) {
+        document.getElementById('loginError').textContent = e.message || 'Falsches Passwort';
+    }
+}
+
+async function doLogout() {
+    await api('logout');
+    showLogin();
+}
+
+function showLogin() {
+    document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('appMain').style.display = 'none';
+    document.getElementById('loginPassword').value = '';
+    document.getElementById('loginPassword').focus();
+}
+
+function showApp() {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('appMain').style.display = 'block';
+    document.getElementById('entryDate').value = lastSaturday();
+    updateCalcHint();
+    render();
+    runAutoCheck();
+}
+
+async function loadAllData() {
+    const [s, sf, e] = await Promise.all([
+        api('settings'), api('spielfelder'), api('entries')
+    ]);
+    settings = s;
+    spielfelder = sf;
+    entries = e;
+}
+
+/* ─────────────────────────────────────────
+   Formatting
+───────────────────────────────────────── */
+const euro = n => new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(n);
 
 function formatDate(str) {
     const d = new Date(str + 'T12:00:00');
-    return d.toLocaleDateString('de-DE', {
-        weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric'
-    });
+    return d.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
 function escHtml(s) {
-    return String(s)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// Convert DD.MM.YYYY to YYYY-MM-DD
-function deToISO(de) {
-    const parts = de.split('.');
-    if (parts.length !== 3) return null;
-    return `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
-}
-
-// Convert YYYY-MM-DD to DD.MM.YYYY
-function isoToDE(iso) {
-    const [y, m, d] = iso.split('-');
-    return `${d}.${m}.${y}`;
-}
+function isoToDE(iso) { const [y,m,d] = iso.split('-'); return `${d}.${m}.${y}`; }
 
 /* ─────────────────────────────────────────
-   Business logic
+   Business Logic
 ───────────────────────────────────────── */
 function countSaturdays() {
     const start = new Date(settings.startDate + 'T12:00:00');
-    const now   = new Date();
-    now.setHours(12, 0, 0, 0);
-    let count = 0;
-    let d = new Date(start);
-    while (d <= now) { count++; d.setDate(d.getDate() + 7); }
-    return count;
+    const now = new Date(); now.setHours(12,0,0,0);
+    let c = 0, d = new Date(start);
+    while (d <= now) { c++; d.setDate(d.getDate() + 7); }
+    return c;
 }
+const totalCost = () => countSaturdays() * settings.weeklyCost;
+const totalWinnings = () => entries.reduce((s,e) => s + (e.win6aus49||0) + (e.winSpiel77||0) + (e.winSuper6||0), 0);
 
-const totalCost     = () => countSaturdays() * settings.weeklyCost;
-const totalWinnings = () => entries.reduce((s, e) =>
-    s + (e.win6aus49 || 0) + (e.winSpiel77 || 0) + (e.winSuper6 || 0), 0);
-
-/* ─────────────────────────────────────────
-   Date helpers
-───────────────────────────────────────── */
 function lastSaturday() {
     const d = new Date();
-    const day = d.getDay();          // 0 = Sun, 6 = Sat
-    const diff = day === 6 ? 0 : day + 1;
+    const diff = d.getDay() === 6 ? 0 : d.getDay() + 1;
     d.setDate(d.getDate() - diff);
     return d.toISOString().split('T')[0];
 }
 
-// Get recent Saturdays (last N weeks) as ISO strings
-function recentSaturdays(n) {
-    const sats = [];
-    const d = new Date(lastSaturday() + 'T12:00:00');
-    for (let i = 0; i < n; i++) {
-        sats.push(d.toISOString().split('T')[0]);
-        d.setDate(d.getDate() - 7);
-    }
-    return sats;
-}
-
 /* ─────────────────────────────────────────
-   Prize Calculation (6aus49)
-   Klasse 9 (2 Richtige + SZ): 6,00 € FEST
-   Klasse 8 (3 Richtige):      VARIABEL (ca. 8–12 €)
-   Klassen 1–7:                 VARIABEL
+   Prize Calculation (client-side for manual calc)
 ───────────────────────────────────────── */
 const PRIZE_KLASSEN = {
-    1: { label: 'Klasse 1 – 6 Richtige + Superzahl', fixed: false },
-    2: { label: 'Klasse 2 – 6 Richtige',             fixed: false },
-    3: { label: 'Klasse 3 – 5 Richtige + Superzahl', fixed: false },
-    4: { label: 'Klasse 4 – 5 Richtige',             fixed: false },
-    5: { label: 'Klasse 5 – 4 Richtige + Superzahl', fixed: false },
-    6: { label: 'Klasse 6 – 4 Richtige',             fixed: false },
-    7: { label: 'Klasse 7 – 3 Richtige + Superzahl', fixed: false },
-    8: { label: 'Klasse 8 – 3 Richtige',             fixed: false },
-    9: { label: 'Klasse 9 – 2 Richtige + Superzahl', fixed: true, amount: 6.00 },
+    1:{label:'Klasse 1 – 6 Richtige + SZ',fixed:false},
+    2:{label:'Klasse 2 – 6 Richtige',fixed:false},
+    3:{label:'Klasse 3 – 5 Richtige + SZ',fixed:false},
+    4:{label:'Klasse 4 – 5 Richtige',fixed:false},
+    5:{label:'Klasse 5 – 4 Richtige + SZ',fixed:false},
+    6:{label:'Klasse 6 – 4 Richtige',fixed:false},
+    7:{label:'Klasse 7 – 3 Richtige + SZ',fixed:false},
+    8:{label:'Klasse 8 – 3 Richtige',fixed:false},
+    9:{label:'Klasse 9 – 2 Richtige + SZ',fixed:true,amount:6.00},
 };
 
-function getPrizeKlasse(matches, hasSuperzahl) {
-    if (matches === 6 && hasSuperzahl)  return 1;
-    if (matches === 6)                  return 2;
-    if (matches === 5 && hasSuperzahl)  return 3;
-    if (matches === 5)                  return 4;
-    if (matches === 4 && hasSuperzahl)  return 5;
-    if (matches === 4)                  return 6;
-    if (matches === 3 && hasSuperzahl)  return 7;
-    if (matches === 3)                  return 8;
-    if (matches === 2 && hasSuperzahl)  return 9;
+function getPrizeKlasse(matches, hasSZ) {
+    if (matches===6 && hasSZ) return 1;
+    if (matches===6) return 2;
+    if (matches===5 && hasSZ) return 3;
+    if (matches===5) return 4;
+    if (matches===4 && hasSZ) return 5;
+    if (matches===4) return 6;
+    if (matches===3 && hasSZ) return 7;
+    if (matches===3) return 8;
+    if (matches===2 && hasSZ) return 9;
     return null;
-}
-
-// Calculate all Spielfelder wins for a draw
-function calculateAllWins(drawnNums, drawnSZ, quoten) {
-    const results = [];
-    spielfelder.forEach((sf, idx) => {
-        if (!sf.nums || sf.nums.length !== 6) return;
-        const matches = sf.nums.filter(n => drawnNums.includes(n)).length;
-        const hasSZ   = sf.superzahl === drawnSZ;
-        const klasse  = getPrizeKlasse(matches, hasSZ);
-        if (klasse === null) {
-            results.push({ sfIdx: idx, matches, hasSZ, klasse: null, amount: 0 });
-        } else {
-            const info = PRIZE_KLASSEN[klasse];
-            let amount = 0;
-            if (info.fixed) {
-                amount = info.amount;
-            } else if (quoten && quoten[klasse]) {
-                amount = quoten[klasse];
-            }
-            results.push({ sfIdx: idx, matches, hasSZ, klasse, amount, label: info.label });
-        }
-    });
-    return results;
-}
-
-/* ─────────────────────────────────────────
-   Auto-Fetch: LottoNumberArchive (GitHub Pages, CORS-enabled)
-   URL: https://johannesfriedrich.github.io/LottoNumberArchive/Lottonumbers_complete.json
-   Format: { data: [ { id, date: "DD.MM.YYYY", Lottozahl: [n,...], Superzahl: n } ] }
-───────────────────────────────────────── */
-const ARCHIVE_URL = 'https://johannesfriedrich.github.io/LottoNumberArchive/Lottonumbers_complete.json';
-const ARCHIVE_CACHE_KEY  = 'tg-archive-cache';
-const ARCHIVE_CACHE_TTL  = 4 * 60 * 60 * 1000; // 4 hours
-
-async function fetchDrawArchive() {
-    // Check cache first
-    try {
-        const cached = JSON.parse(localStorage.getItem(ARCHIVE_CACHE_KEY));
-        if (cached && cached.ts && (Date.now() - cached.ts) < ARCHIVE_CACHE_TTL) {
-            _drawArchive = cached.draws;
-            return _drawArchive;
-        }
-    } catch { /* ignore cache errors */ }
-
-    const resp = await fetch(ARCHIVE_URL, { signal: AbortSignal.timeout(15000) });
-    if (!resp.ok) throw new Error('Archive fetch failed: ' + resp.status);
-    const json = await resp.json();
-    const draws = json.data || [];
-
-    // Convert to lookup map: ISO date → draw data
-    const map = {};
-    for (const d of draws) {
-        const iso = deToISO(d.date);
-        if (iso && d.Lottozahl && d.Lottozahl.length === 6 && d.Superzahl !== undefined) {
-            map[iso] = { nums: d.Lottozahl, superzahl: d.Superzahl };
-        }
-    }
-
-    // Cache in localStorage (only the map, much smaller)
-    try {
-        localStorage.setItem(ARCHIVE_CACHE_KEY, JSON.stringify({ ts: Date.now(), draws: map }));
-    } catch { /* storage full, ignore */ }
-
-    _drawArchive = map;
-    return map;
-}
-
-/* ─────────────────────────────────────────
-   Auto-Fetch: Gewinnquoten from lotto.de via CORS proxy
-   Tries multiple proxy services, extracts __NEXT_DATA__ JSON
-───────────────────────────────────────── */
-async function fetchGewinnquoten() {
-    const targetUrl = 'https://www.lotto.de/lotto-6aus49/gewinnzahlen';
-    const proxies = [
-        url => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url),
-        url => 'https://corsproxy.io/?' + encodeURIComponent(url),
-    ];
-
-    for (const makeProxy of proxies) {
-        try {
-            const resp = await fetch(makeProxy(targetUrl), { signal: AbortSignal.timeout(12000) });
-            if (!resp.ok) continue;
-            const html = await resp.text();
-
-            // Extract __NEXT_DATA__ JSON
-            const m = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
-            if (!m) continue;
-            const nextData = JSON.parse(m[1]);
-
-            // winningNumbersData is an OBJECT with numbered keys ('0','1',...'6'),
-            // each containing an array of draw objects. The index for 6aus49 is NOT
-            // stable, so we iterate all keys and filter by gameType.name.
-            const wnData = nextData?.props?.pageProps?.winningNumbersData;
-            if (!wnData || typeof wnData !== 'object') continue;
-
-            const quotenMap = {};
-
-            for (const key of Object.keys(wnData)) {
-                const items = Array.isArray(wnData[key]) ? wnData[key] : [wnData[key]];
-                for (const draw of items) {
-                    const name = draw?.gameType?.name || '';
-                    if (!name.includes('6aus49')) continue;
-
-                    // Draw date: try common field names
-                    const rawDate = draw.drawDate || draw.date || draw.datum || '';
-                    if (!rawDate) continue;
-
-                    let iso = null;
-                    if (/\d{4}-\d{2}-\d{2}/.test(rawDate)) {
-                        iso = String(rawDate).substring(0, 10);
-                    } else if (/\d{2}\.\d{2}\.\d{4}/.test(rawDate)) {
-                        iso = deToISO(rawDate);
-                    }
-                    if (!iso) continue;
-
-                    // Gewinnquoten: try multiple possible field names
-                    const odds = draw.odds || draw.quoten || draw.gewinnquoten ||
-                                 draw.prizeTiers || draw.winningClasses || [];
-                    if (!Array.isArray(odds) || odds.length === 0) continue;
-
-                    const q = {};
-                    for (const tier of odds) {
-                        // Class number: various possible field names
-                        const kl = tier.class || tier.klasse || tier.prizeClass ||
-                                   tier.tierNumber || tier.className;
-                        // Prize amount: various possible field names
-                        const amt = tier.amount || tier.prize || tier.prizeAmount ||
-                                    tier.quote || tier.gewinnbetrag;
-                        const klNum = parseInt(kl);
-                        const amtNum = parseFloat(amt);
-                        if (klNum >= 1 && klNum <= 9 && amtNum > 0) {
-                            q[klNum] = amtNum;
-                        }
-                    }
-                    if (Object.keys(q).length > 0) {
-                        quotenMap[iso] = q;
-                    }
-                }
-            }
-            if (Object.keys(quotenMap).length > 0) return quotenMap;
-        } catch {
-            continue;
-        }
-    }
-    return null;
-}
-
-/* ─────────────────────────────────────────
-   Auto-Check: Main logic (runs on page load + interval)
-───────────────────────────────────────── */
-async function autoCheckForWins() {
-    const activeFields = spielfelder.filter(sf => sf.nums && sf.nums.length === 6);
-    if (activeFields.length === 0) {
-        setAutoStatus('Keine Spielfelder hinterlegt – automatische Prüfung deaktiviert.');
-        return;
-    }
-
-    setAutoStatus('<span class="spinner"></span> Ziehungsergebnisse werden abgerufen…');
-
-    let archive = null;
-    let quotenMap = null;
-
-    // Fetch draw numbers
-    try {
-        archive = await fetchDrawArchive();
-    } catch (err) {
-        setAutoStatus('Ziehungsdaten konnten nicht abgerufen werden. Manuelle Eingabe möglich.');
-        console.warn('Archive fetch failed:', err);
-        return;
-    }
-
-    // Try to fetch Gewinnquoten (best effort)
-    try {
-        quotenMap = await fetchGewinnquoten();
-    } catch {
-        // Fail silently - quoten are optional
-    }
-
-    // Check recent Saturdays (last 4 weeks) for unchecked wins
-    const sats = recentSaturdays(4);
-    const startDate = settings.startDate;
-    const newWins = [];
-
-    for (const satISO of sats) {
-        // Skip dates before start
-        if (satISO < startDate) continue;
-        // Skip if entry already exists for this date
-        if (entries.some(e => e.date === satISO)) continue;
-        // Skip if no draw data available
-        if (!archive[satISO]) continue;
-
-        const draw = archive[satISO];
-        const quoten = quotenMap ? (quotenMap[satISO] || null) : null;
-        const results = calculateAllWins(draw.nums, draw.superzahl, quoten);
-        const wins = results.filter(r => r.klasse !== null);
-
-        if (wins.length === 0) continue;
-
-        // Calculate total known amount
-        let totalAmount = 0;
-        let allAmountsKnown = true;
-        const details = [];
-
-        for (const w of wins) {
-            if (w.amount > 0) {
-                totalAmount += w.amount;
-                details.push(`SF${w.sfIdx + 1}: ${w.label} = ${euro(w.amount)}`);
-            } else {
-                allAmountsKnown = false;
-                details.push(`SF${w.sfIdx + 1}: ${w.label} (Betrag unbekannt)`);
-            }
-        }
-
-        // If all amounts known (fixed + quoten), auto-create entry
-        if (allAmountsKnown && totalAmount > 0) {
-            const note = wins.map(w => `SF${w.sfIdx+1}: Kl.${w.klasse}`).join(', ');
-            entries.push({
-                id: Date.now().toString() + '_' + satISO,
-                date: satISO,
-                win6aus49: totalAmount,
-                winSpiel77: 0,
-                winSuper6: 0,
-                note: ('Auto: ' + note).substring(0, 80)
-            });
-            persist();
-            newWins.push({
-                date: satISO,
-                amount: totalAmount,
-                details,
-                autoSaved: true,
-            });
-        } else {
-            // Wins detected but amounts partially unknown → show banner
-            newWins.push({
-                date: satISO,
-                amount: totalAmount,
-                details,
-                autoSaved: false,
-                wins,
-            });
-        }
-    }
-
-    // Show results
-    if (newWins.length > 0) {
-        showWinBanner(newWins);
-        render(); // Re-render to show auto-saved entries
-        const autoSaved = newWins.filter(w => w.autoSaved);
-        if (autoSaved.length > 0) {
-            const totalAutoSaved = autoSaved.reduce((s, w) => s + w.amount, 0);
-            setAutoStatus(
-                `&#10004; ${autoSaved.length} Gewinn(e) automatisch eingetragen: ${euro(totalAutoSaved)}`
-            );
-        } else {
-            setAutoStatus('&#9888; Gewinne erkannt – bitte Beträge prüfen (siehe Banner oben).');
-        }
-    } else {
-        // Also auto-fill the drawn numbers for the latest Saturday
-        const lastSat = sats[0];
-        if (archive[lastSat]) {
-            const draw = archive[lastSat];
-            for (let i = 0; i < 6; i++) {
-                document.getElementById(`drawn-${i}`).value = draw.nums[i];
-            }
-            document.getElementById('drawn-sz').value = draw.superzahl;
-        }
-        setAutoStatus(`&#10004; Letzte Prüfung: ${new Date().toLocaleString('de-DE')} – kein neuer Gewinn.`);
-    }
-}
-
-function setAutoStatus(html) {
-    document.getElementById('autoStatus').innerHTML = html;
-}
-
-/* ─────────────────────────────────────────
-   Win Banner: Display auto-detected wins
-───────────────────────────────────────── */
-function showWinBanner(wins) {
-    const banner = document.getElementById('winBanner');
-    const detailsEl = document.getElementById('winDetails');
-    const totalEl = document.getElementById('winTotal');
-    const actionsEl = document.getElementById('winActions');
-
-    let detailsHTML = '';
-    let actionsHTML = '';
-
-    for (const w of wins) {
-        const dateFmt = formatDate(w.date);
-        if (w.autoSaved) {
-            detailsHTML += `<div><strong>${dateFmt}:</strong> ${w.details.join(' · ')} ` +
-                `<span class="positive">&#10004; Automatisch eingetragen!</span></div>`;
-        } else {
-            detailsHTML += `<div><strong>${dateFmt}:</strong> ${w.details.join(' · ')}</div>`;
-            if (w.amount > 0) {
-                // Partially known
-                actionsHTML += `<button class="btn btn-primary btn-sm" ` +
-                    `onclick="autoFillEntry('${w.date}', ${w.amount}, '${escHtml(w.details.join('; ').substring(0,80))}')">` +
-                    `${euro(w.amount)} f&uuml;r ${isoToDE(w.date)} eintragen</button>`;
-            }
-            actionsHTML += `<a href="https://www.lotto.de/lotto-6aus49/gewinnzahlen" ` +
-                `target="_blank" rel="noopener" class="btn btn-secondary btn-sm">` +
-                `Quoten auf lotto.de pr&uuml;fen &#8599;</a>`;
-        }
-    }
-
-    const totalAmt = wins.reduce((s, w) => s + w.amount, 0);
-    if (totalAmt > 0) {
-        totalEl.textContent = `Erkannter Gewinn: ${euro(totalAmt)}`;
-    } else {
-        totalEl.textContent = 'Gewinn erkannt – Beträge bitte auf lotto.de prüfen!';
-    }
-
-    detailsEl.innerHTML = detailsHTML;
-    actionsEl.innerHTML = actionsHTML;
-    banner.classList.add('active');
-}
-
-function autoFillEntry(dateISO, amount, note) {
-    document.getElementById('entryDate').value = dateISO;
-    document.getElementById('win6aus49').value = amount.toFixed(2);
-    document.getElementById('entryNote').value = note;
-    document.getElementById('winBanner').classList.remove('active');
-    toast('Betrag ins Formular übernommen – bitte prüfen und speichern.', 'success');
 }
 
 /* ─────────────────────────────────────────
    Render
 ───────────────────────────────────────── */
 function render() {
-    const weeks     = countSaturdays();
-    const cost      = totalCost();
-    const win       = totalWinnings();
-    const balance   = win - cost;
-    const n         = settings.players.length;
-    const perPlayer = balance / n;
+    if (!settings) return;
+    const weeks = countSaturdays(), cost = totalCost(), win = totalWinnings();
+    const balance = win - cost, n = settings.players.length, pp = balance / n;
 
-    /* Summary cards */
     document.getElementById('summaryCards').innerHTML = `
-        <div class="card">
-            <div class="card-label">Gesamtkosten</div>
-            <div class="card-value red">${euro(cost)}</div>
-            <div class="card-sub">${weeks}&thinsp;×&thinsp;${euro(settings.weeklyCost)} / Woche</div>
-        </div>
-        <div class="card">
-            <div class="card-label">Gesamtgewinn</div>
-            <div class="card-value green">${euro(win)}</div>
-            <div class="card-sub">${entries.length} Gewinneintrag${entries.length !== 1 ? 'träge' : ''}</div>
-        </div>
-        <div class="card">
-            <div class="card-label">Bilanz (gesamt)</div>
-            <div class="card-value ${balance >= 0 ? 'green' : 'red'}">${euro(balance)}</div>
-            <div class="card-sub">${balance >= 0 ? '✓ Im Plus' : '✗ Im Minus'}</div>
-        </div>
-        <div class="card">
-            <div class="card-label">Bilanz pro Spieler</div>
-            <div class="card-value ${perPlayer >= 0 ? 'green' : 'red'}"
-                 style="font-size:1.55rem">${euro(perPlayer)}</div>
-            <div class="card-sub">je ${euro(cost / n)} Kosten · je ${euro(win / n)} Gewinn</div>
-        </div>
-    `;
+        <div class="card"><div class="card-label">Gesamtkosten</div><div class="card-value red">${euro(cost)}</div><div class="card-sub">${weeks}&thinsp;×&thinsp;${euro(settings.weeklyCost)} / Woche</div></div>
+        <div class="card"><div class="card-label">Gesamtgewinn</div><div class="card-value green">${euro(win)}</div><div class="card-sub">${entries.length} Gewinneintrag${entries.length!==1?'träge':''}</div></div>
+        <div class="card"><div class="card-label">Bilanz (gesamt)</div><div class="card-value ${balance>=0?'green':'red'}">${euro(balance)}</div><div class="card-sub">${balance>=0?'✓ Im Plus':'✗ Im Minus'}</div></div>
+        <div class="card"><div class="card-label">Bilanz pro Spieler</div><div class="card-value ${pp>=0?'green':'red'}" style="font-size:1.55rem">${euro(pp)}</div><div class="card-sub">je ${euro(cost/n)} Kosten · je ${euro(win/n)} Gewinn</div></div>`;
 
-    /* Info bar */
-    const start = new Date(settings.startDate + 'T12:00:00');
-    const startFmt = start.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const start = new Date(settings.startDate+'T12:00:00');
+    const sFmt = start.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'});
     document.getElementById('infoBar').innerHTML =
-        `Spielzeitraum seit <strong>${startFmt}</strong> &nbsp;·&nbsp; ` +
-        `<strong>${weeks}</strong> Samstage &nbsp;·&nbsp; ` +
-        `8 Spielfelder + Spiel&nbsp;77 + Super&nbsp;6 &nbsp;·&nbsp; ` +
-        `Kosten je Woche: <strong>${euro(settings.weeklyCost)}</strong>`;
-
-    /* Weeks badge */
+        `Spielzeitraum seit <strong>${sFmt}</strong> · <strong>${weeks}</strong> Samstage · 8 Spielfelder + Spiel&nbsp;77 + Super&nbsp;6 · Kosten: <strong>${euro(settings.weeklyCost)}</strong>/Woche`;
     document.getElementById('weeksBadge').textContent = `${weeks} Wochen gespielt`;
 
-    /* Player table */
     const tbody = document.querySelector('#playerTable tbody');
-    tbody.innerHTML = settings.players.map(p => `
-        <tr>
-            <td><strong>${escHtml(p)}</strong></td>
-            <td class="negative">${euro(cost / n)}</td>
-            <td class="positive">${euro(win  / n)}</td>
-            <td class="${perPlayer >= 0 ? 'positive' : 'negative'}">${euro(perPlayer)}</td>
-        </tr>
-    `).join('') + `
-        <tr class="total-row">
-            <td>Gesamt</td>
-            <td class="negative">${euro(cost)}</td>
-            <td class="positive">${euro(win)}</td>
-            <td class="${balance >= 0 ? 'positive' : 'negative'}">${euro(balance)}</td>
-        </tr>
-    `;
+    tbody.innerHTML = settings.players.map(p => `<tr><td><strong>${escHtml(p)}</strong></td><td class="negative">${euro(cost/n)}</td><td class="positive">${euro(win/n)}</td><td class="${pp>=0?'positive':'negative'}">${euro(pp)}</td></tr>`).join('') +
+        `<tr class="total-row"><td>Gesamt</td><td class="negative">${euro(cost)}</td><td class="positive">${euro(win)}</td><td class="${balance>=0?'positive':'negative'}">${euro(balance)}</td></tr>`;
 
-    /* History */
-    const histBody = document.getElementById('historyBody');
-    document.getElementById('totalEntries').textContent =
-        entries.length ? `${entries.length} Einträge` : '';
-
-    if (entries.length === 0) {
-        histBody.innerHTML = `
-            <tr><td colspan="7" style="text-align:center;padding:28px;color:var(--muted)">
-                Noch keine Gewinne eingetragen
-            </td></tr>`;
+    const hb = document.getElementById('historyBody');
+    document.getElementById('totalEntries').textContent = entries.length ? `${entries.length} Einträge` : '';
+    if (!entries.length) {
+        hb.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:28px;color:var(--muted)">Noch keine Gewinne eingetragen</td></tr>';
         return;
     }
-
-    const sorted = [...entries].sort((a, b) => b.date.localeCompare(a.date));
-    histBody.innerHTML = sorted.map(e => {
-        const total = (e.win6aus49 || 0) + (e.winSpiel77 || 0) + (e.winSuper6 || 0);
-        return `
-            <tr>
-                <td style="white-space:nowrap">${formatDate(e.date)}</td>
-                <td>${e.win6aus49 ? euro(e.win6aus49) : '<span class="neutral">–</span>'}</td>
-                <td>${e.winSpiel77 ? euro(e.winSpiel77) : '<span class="neutral">–</span>'}</td>
-                <td>${e.winSuper6  ? euro(e.winSuper6)  : '<span class="neutral">–</span>'}</td>
-                <td><strong class="positive">${euro(total)}</strong></td>
-                <td style="color:var(--muted);font-size:0.82rem">${escHtml(e.note || '')}</td>
-                <td>
-                    <button class="btn btn-danger btn-sm"
-                            onclick="deleteEntry('${escHtml(e.id)}')"
-                            title="Eintrag löschen">✕</button>
-                </td>
-            </tr>
-        `;
+    const sorted = [...entries].sort((a,b) => b.date.localeCompare(a.date));
+    hb.innerHTML = sorted.map(e => {
+        const t = (e.win6aus49||0)+(e.winSpiel77||0)+(e.winSuper6||0);
+        return `<tr>
+            <td style="white-space:nowrap">${formatDate(e.date)}</td>
+            <td>${e.win6aus49?euro(e.win6aus49):'<span class="neutral">–</span>'}</td>
+            <td>${e.winSpiel77?euro(e.winSpiel77):'<span class="neutral">–</span>'}</td>
+            <td>${e.winSuper6?euro(e.winSuper6):'<span class="neutral">–</span>'}</td>
+            <td><strong class="positive">${euro(t)}</strong></td>
+            <td style="color:var(--muted);font-size:0.82rem">${escHtml(e.note||'')}</td>
+            <td><button class="btn btn-danger btn-sm" onclick="deleteEntry(${e.id})" title="Löschen">✕</button></td>
+        </tr>`;
     }).join('');
 }
 
 /* ─────────────────────────────────────────
-   Entry CRUD
+   Entry CRUD (via API)
 ───────────────────────────────────────── */
-function addEntry() {
+async function addEntry() {
     const dateVal = document.getElementById('entryDate').value;
-    const v6      = parseFloat(document.getElementById('win6aus49').value) || 0;
-    const v77     = parseFloat(document.getElementById('winSpiel77').value) || 0;
-    const vs6     = parseFloat(document.getElementById('winSuper6').value)  || 0;
-    const note    = document.getElementById('entryNote').value.trim();
+    const v6 = parseFloat(document.getElementById('win6aus49').value)||0;
+    const v77 = parseFloat(document.getElementById('winSpiel77').value)||0;
+    const vs6 = parseFloat(document.getElementById('winSuper6').value)||0;
+    const note = document.getElementById('entryNote').value.trim();
 
-    if (!dateVal)           return toast('Bitte ein Datum auswählen.', 'error');
-    if (v6 + v77 + vs6 <= 0) return toast('Bitte mindestens einen Gewinnbetrag eintragen.', 'error');
+    if (!dateVal) return toast('Bitte ein Datum auswählen.','error');
+    if (v6+v77+vs6 <= 0) return toast('Bitte mindestens einen Gewinnbetrag eintragen.','error');
 
-    // Check for duplicate date
     if (entries.some(e => e.date === dateVal)) {
         if (!confirm(`Für den ${formatDate(dateVal)} gibt es bereits einen Eintrag.\nTrotzdem hinzufügen?`)) return;
     }
 
-    entries.push({ id: Date.now().toString(), date: dateVal,
-                   win6aus49: v6, winSpiel77: v77, winSuper6: vs6, note });
-    persist();
-
-    document.getElementById('win6aus49').value  = '';
-    document.getElementById('winSpiel77').value = '';
-    document.getElementById('winSuper6').value  = '';
-    document.getElementById('entryNote').value  = '';
-
-    // Hide banner if win for this date was pending
-    const banner = document.getElementById('winBanner');
-    if (banner.classList.contains('active')) {
-        banner.classList.remove('active');
-    }
-
-    toast(`Gewinn von ${euro(v6 + v77 + vs6)} eingetragen!`, 'success');
-    render();
+    try {
+        const result = await api('entries', { body: { date: dateVal, win6aus49: v6, winSpiel77: v77, winSuper6: vs6, note } });
+        entries.push({ id: result.id, date: dateVal, win6aus49: v6, winSpiel77: v77, winSuper6: vs6, note });
+        document.getElementById('win6aus49').value = '';
+        document.getElementById('winSpiel77').value = '';
+        document.getElementById('winSuper6').value = '';
+        document.getElementById('entryNote').value = '';
+        document.getElementById('winBanner').classList.remove('active');
+        toast(`Gewinn von ${euro(v6+v77+vs6)} eingetragen!`,'success');
+        render();
+    } catch (e) { toast(e.message, 'error'); }
 }
 
-function deleteEntry(id) {
+async function deleteEntry(id) {
     if (!confirm('Diesen Eintrag wirklich löschen?')) return;
-    entries = entries.filter(e => e.id !== id);
-    persist();
-    toast('Eintrag gelöscht.', 'success');
-    render();
+    try {
+        await api('entries', { method: 'DELETE', params: '&id=' + id });
+        entries = entries.filter(e => e.id !== id);
+        toast('Eintrag gelöscht.','success');
+        render();
+    } catch (e) { toast(e.message, 'error'); }
 }
 
 /* ─────────────────────────────────────────
-   Settings
+   Settings (via API)
 ───────────────────────────────────────── */
 function openSettings() {
-    document.getElementById('s-player1').value   = settings.players[0] || '';
-    document.getElementById('s-player2').value   = settings.players[1] || '';
-    document.getElementById('s-player3').value   = settings.players[2] || '';
+    document.getElementById('s-player1').value = settings.players[0]||'';
+    document.getElementById('s-player2').value = settings.players[1]||'';
+    document.getElementById('s-player3').value = settings.players[2]||'';
     document.getElementById('s-weeklyCost').value = settings.weeklyCost;
-    document.getElementById('s-startDate').value  = settings.startDate;
+    document.getElementById('s-startDate').value = settings.startDate;
     document.getElementById('settingsModal').classList.add('active');
 }
-function closeSettings() {
-    document.getElementById('settingsModal').classList.remove('active');
-}
-function saveSettings() {
-    const p1   = document.getElementById('s-player1').value.trim();
-    const p2   = document.getElementById('s-player2').value.trim();
-    const p3   = document.getElementById('s-player3').value.trim();
+
+async function saveSettings() {
+    const p1 = document.getElementById('s-player1').value.trim();
+    const p2 = document.getElementById('s-player2').value.trim();
+    const p3 = document.getElementById('s-player3').value.trim();
     const cost = parseFloat(document.getElementById('s-weeklyCost').value);
     const date = document.getElementById('s-startDate').value;
+    if (!p1||!p2||!p3) return toast('Alle Spielernamen angeben.','error');
+    if (!cost||cost<=0) return toast('Gültige Kosten eingeben.','error');
+    if (!date) return toast('Startdatum angeben.','error');
 
-    if (!p1 || !p2 || !p3) return toast('Bitte alle Spielernamen angeben.', 'error');
-    if (!cost || cost <= 0) return toast('Bitte gültige Kosten eingeben.', 'error');
-    if (!date)              return toast('Bitte ein Startdatum angeben.', 'error');
-
-    settings = { players: [p1, p2, p3], weeklyCost: cost, startDate: date };
-    persist();
-    closeSettings();
-    toast('Einstellungen gespeichert.', 'success');
-    render();
+    try {
+        await api('settings', { body: { players: [p1,p2,p3], weeklyCost: cost, startDate: date } });
+        settings = { players: [p1,p2,p3], weeklyCost: cost, startDate: date };
+        closeModal('settingsModal');
+        toast('Einstellungen gespeichert.','success');
+        render();
+    } catch (e) { toast(e.message, 'error'); }
 }
 
 /* ─────────────────────────────────────────
-   Toast notification
+   Spielfelder (via API)
 ───────────────────────────────────────── */
-let toastTimer;
-function toast(msg, type = 'success') {
-    const el = document.getElementById('notify');
-    el.textContent = msg;
-    el.className = `notify ${type} show`;
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => el.classList.remove('show'), 3500);
-}
-
-/* ─────────────────────────────────────────
-   Spielfelder Management
-───────────────────────────────────────── */
-function countActiveSpielfelder() {
-    return spielfelder.filter(sf => sf.nums && sf.nums.length === 6).length;
-}
-
-function buildSFTable() {
-    const tbody = document.getElementById('sfTableBody');
-    tbody.innerHTML = '';
-    for (let i = 0; i < 8; i++) {
-        const sf = spielfelder[i] || {nums: [], superzahl: null};
-        const numsVal = sf.nums && sf.nums.length ? sf.nums.join(' ') : '';
-        const szVal   = sf.superzahl !== null && sf.superzahl !== undefined ? sf.superzahl : '';
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td class="sf-label">Spielfeld ${i + 1}</td>
-            <td>
-                <input type="text" id="sf-nums-${i}" class="sf-nums-input"
-                       value="${escHtml(numsVal)}"
-                       placeholder="z.B. 3 10 16 20 30 41" maxlength="25">
-            </td>
-            <td>
-                <input type="number" id="sf-sz-${i}" class="sf-sz-input"
-                       value="${szVal}" min="0" max="9" placeholder="0-9">
-            </td>
-        `;
-        tbody.appendChild(tr);
-    }
-}
+function countActiveSF() { return spielfelder.filter(sf => sf.nums && sf.nums.length === 6).length; }
 
 function openZahlenModal() {
-    buildSFTable();
+    const tb = document.getElementById('sfTableBody');
+    tb.innerHTML = '';
+    for (let i = 0; i < 8; i++) {
+        const sf = spielfelder[i] || { nums: [], superzahl: null };
+        const nv = sf.nums && sf.nums.length ? sf.nums.join(' ') : '';
+        const sv = sf.superzahl !== null && sf.superzahl !== undefined ? sf.superzahl : '';
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td class="sf-label">Spielfeld ${i+1}</td>
+            <td><input type="text" id="sf-nums-${i}" class="sf-nums-input" value="${escHtml(nv)}" placeholder="z.B. 3 10 16 20 30 41" maxlength="25"></td>
+            <td><input type="number" id="sf-sz-${i}" class="sf-sz-input" value="${sv}" min="0" max="9" placeholder="0-9"></td>`;
+        tb.appendChild(tr);
+    }
     document.getElementById('zahlenModal').classList.add('active');
 }
 
-function closeZahlenModal() {
-    document.getElementById('zahlenModal').classList.remove('active');
-}
-
-function saveZahlen() {
+async function saveZahlen() {
     const newSF = [];
     for (let i = 0; i < 8; i++) {
-        const numsRaw = document.getElementById(`sf-nums-${i}`).value.trim();
-        const szRaw   = document.getElementById(`sf-sz-${i}`).value.trim();
-
-        if (!numsRaw) {
-            newSF.push({nums: [], superzahl: null});
-            continue;
-        }
-
-        const nums = numsRaw.split(/[\s,;]+/).map(Number).filter(n => !isNaN(n) && n > 0);
-        if (nums.length !== 6) {
-            return toast(`Spielfeld ${i + 1}: Bitte genau 6 Zahlen eingeben.`, 'error');
-        }
-        if (nums.some(n => n < 1 || n > 49)) {
-            return toast(`Spielfeld ${i + 1}: Zahlen müssen zwischen 1 und 49 liegen.`, 'error');
-        }
-        if (new Set(nums).size !== 6) {
-            return toast(`Spielfeld ${i + 1}: Zahlen dürfen sich nicht wiederholen.`, 'error');
-        }
-
-        const sz = parseInt(szRaw);
-        if (isNaN(sz) || sz < 0 || sz > 9) {
-            return toast(`Spielfeld ${i + 1}: Bitte eine gültige Superzahl (0–9) eingeben.`, 'error');
-        }
-
-        newSF.push({nums: nums.slice().sort((a, b) => a - b), superzahl: sz});
+        const raw = document.getElementById(`sf-nums-${i}`).value.trim();
+        const szR = document.getElementById(`sf-sz-${i}`).value.trim();
+        if (!raw) { newSF.push({nums:[],superzahl:null}); continue; }
+        const nums = raw.split(/[\s,;]+/).map(Number).filter(n => !isNaN(n) && n > 0);
+        if (nums.length !== 6) return toast(`Spielfeld ${i+1}: Genau 6 Zahlen eingeben.`,'error');
+        if (nums.some(n => n < 1 || n > 49)) return toast(`Spielfeld ${i+1}: Zahlen 1–49.`,'error');
+        if (new Set(nums).size !== 6) return toast(`Spielfeld ${i+1}: Keine Duplikate.`,'error');
+        const sz = parseInt(szR);
+        if (isNaN(sz) || sz < 0 || sz > 9) return toast(`Spielfeld ${i+1}: Superzahl 0–9.`,'error');
+        newSF.push({nums: nums.slice().sort((a,b)=>a-b), superzahl: sz});
     }
-
-    spielfelder = newSF;
-    persistSpielfelder();
-    closeZahlenModal();
-    updateCalcHint();
-    toast(`${countActiveSpielfelder()} Spielfeld(er) gespeichert. Auto-Prüfung läuft…`, 'success');
-
-    // Re-run auto-check with new Spielfelder
-    autoCheckForWins();
+    try {
+        await api('spielfelder', { body: newSF });
+        spielfelder = newSF;
+        closeModal('zahlenModal');
+        updateCalcHint();
+        toast(`${countActiveSF()} Spielfeld(er) gespeichert.`,'success');
+    } catch (e) { toast(e.message, 'error'); }
 }
 
 function updateCalcHint() {
-    const hint = document.getElementById('calcHint');
-    if (!hint) return;
-    const active = countActiveSpielfelder();
-    if (active === 0) {
-        hint.innerHTML =
-            'Noch keine Spielfelder hinterlegt. Bitte unter ' +
-            '<button class="btn btn-secondary btn-sm" onclick="openZahlenModal()" ' +
-            'style="vertical-align:middle">&#128290; Meine Zahlen</button> eintragen.';
-    } else {
-        hint.textContent =
-            `${active} Spielfeld(er) hinterlegt. Ziehungszahlen eingeben und Gewinn berechnen lassen.`;
-    }
+    const el = document.getElementById('calcHint');
+    const n = countActiveSF();
+    el.textContent = n === 0
+        ? 'Noch keine Spielfelder hinterlegt.'
+        : `${n} Spielfeld(er) hinterlegt. Ziehungszahlen eingeben oder "Archiv prüfen" klicken.`;
 }
 
 /* ─────────────────────────────────────────
-   Manual Prize Calculation
+   Auto-Check (server-side via API)
 ───────────────────────────────────────── */
-function berechneGewinn() {
-    const drawnNums = [];
-    for (let i = 0; i < 6; i++) {
-        const n = parseInt(document.getElementById(`drawn-${i}`).value);
-        if (isNaN(n) || n < 1 || n > 49) {
-            return toast(`Gezogene Zahl ${i + 1}: Ungültig. Bitte Zahlen 1–49 eingeben.`, 'error');
-        }
-        drawnNums.push(n);
-    }
-    if (new Set(drawnNums).size !== 6) {
-        return toast('Die 6 Ziehungszahlen müssen alle verschieden sein.', 'error');
+async function runAutoCheck() {
+    if (countActiveSF() === 0) {
+        setStatus('Keine Spielfelder hinterlegt – bitte zuerst "Meine Zahlen" ausfüllen.');
+        return;
     }
 
-    const drawnSZ = parseInt(document.getElementById('drawn-sz').value);
-    if (isNaN(drawnSZ) || drawnSZ < 0 || drawnSZ > 9) {
-        return toast('Bitte eine gültige Superzahl (0–9) eingeben.', 'error');
-    }
+    setStatus('<span class="spinner"></span> Archiv wird geprüft (LottoNumberArchive + lotto.de)…');
 
-    const activeFields = spielfelder.filter(sf => sf.nums && sf.nums.length === 6);
-    if (activeFields.length === 0) {
-        return toast('Keine Spielfelder hinterlegt. Bitte zuerst "Meine Zahlen" ausfüllen.', 'error');
-    }
+    try {
+        const result = await api('auto-check');
 
-    const results = calculateAllWins(drawnNums, drawnSZ, null);
-    const rows = [];
-    let totalFixed = 0;
-    let variableCount = 0;
-    const noteParts = [];
-
-    for (const r of results) {
-        if (r.klasse === null) {
-            rows.push(
-                `<div class="result-row"><span>Spielfeld ${r.sfIdx + 1}</span>` +
-                `<span class="neutral">${r.matches} Treffer – kein Gewinn</span></div>`
-            );
-        } else {
-            const info = PRIZE_KLASSEN[r.klasse];
-            if (info.fixed) {
-                totalFixed += info.amount;
-                noteParts.push(`SF${r.sfIdx + 1}: ${info.label}`);
-                rows.push(
-                    `<div class="result-row"><span>Spielfeld ${r.sfIdx + 1} – ${escHtml(info.label)}</span>` +
-                    `<span class="positive">${euro(info.amount)}</span></div>`
-                );
-            } else {
-                variableCount++;
-                noteParts.push(`SF${r.sfIdx + 1}: ${info.label}`);
-                rows.push(
-                    `<div class="result-row"><span>Spielfeld ${r.sfIdx + 1} – ${escHtml(info.label)}</span>` +
-                    `<span style="color:#e67e22;font-weight:600">&#9888; Betrag variabel – bitte auf lotto.de prüfen!</span></div>`
-                );
-            }
-        }
-    }
-
-    let summaryHTML = '<div class="result-summary">';
-    if (totalFixed === 0 && variableCount === 0) {
-        summaryHTML += '<span class="neutral">Kein Gewinn.</span>';
-    } else {
-        if (totalFixed > 0) {
-            summaryHTML += `Feste Gewinne: <strong class="positive">${euro(totalFixed)}</strong>`;
-        }
-        if (variableCount > 0) {
-            summaryHTML += (totalFixed > 0 ? '<br>' : '') +
-                `<span style="color:#e67e22">&#9888; ${variableCount} variable Gewinnklasse(n) – ` +
-                `bitte auf <a href="https://www.lotto.de/lotto-6aus49/gewinnzahlen" target="_blank" ` +
-                `rel="noopener">lotto.de</a> den genauen Betrag prüfen!</span>`;
-        }
-        if (totalFixed > 0) {
-            _lastCalcAmount = totalFixed;
-            _lastCalcNote = noteParts.join('; ').substring(0, 80);
-            summaryHTML +=
-                `<br><button class="btn btn-primary btn-sm" style="margin-top:10px" ` +
-                `onclick="uebernehmeGewinn()">` +
-                `${euro(totalFixed)} in Formular &uuml;bernehmen</button>`;
-        }
-    }
-    summaryHTML += '</div>';
-
-    const resultEl = document.getElementById('calcResult');
-    resultEl.innerHTML =
-        `<div class="result-title">Ergebnis f&uuml;r ${activeFields.length} Spielfeld(er):</div>` +
-        rows.join('') + summaryHTML;
-    resultEl.style.display = 'block';
-}
-
-function uebernehmeGewinn() {
-    document.getElementById('win6aus49').value = _lastCalcAmount.toFixed(2);
-    if (!document.getElementById('entryNote').value.trim()) {
-        document.getElementById('entryNote').value = _lastCalcNote;
-    }
-    toast('Betrag in das Formular übernommen!', 'success');
-}
-
-function resetCalcResult() {
-    const el = document.getElementById('calcResult');
-    el.style.display = 'none';
-    el.innerHTML = '';
-}
-
-/* ─────────────────────────────────────────
-   CSV Import (Sachsenlotto / WestLotto)
-───────────────────────────────────────── */
-function handleCSVUpload(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        try { parseCSVForDate(e.target.result); }
-        catch (err) { toast('CSV konnte nicht gelesen werden: ' + err.message, 'error'); }
-    };
-    reader.readAsText(file, 'utf-8');
-    event.target.value = '';
-}
-
-function parseCSVForDate(csvText) {
-    const targetISO = document.getElementById('entryDate').value;
-    if (!targetISO) return toast('Bitte zuerst ein Datum im Formular auswählen.', 'error');
-
-    const targetDE = isoToDE(targetISO);
-    const lines = csvText.split(/\r?\n/).filter(l => l.trim() && !l.startsWith('#'));
-
-    for (const line of lines) {
-        const sep  = line.includes(';') ? ';' : ',';
-        const cols = line.split(sep).map(c => c.trim().replace(/^["']|["']$/g, ''));
-        if (cols.length < 8) continue;
-
-        const dateCol = cols[0];
-        if (dateCol !== targetDE && dateCol !== targetISO) continue;
-
-        const nums = [];
-        for (let i = 1; i <= 6; i++) {
-            const n = parseInt(cols[i]);
-            if (isNaN(n) || n < 1 || n > 49) { nums.length = 0; break; }
-            nums.push(n);
-        }
-        const sz = parseInt(cols[7]);
-
-        if (nums.length === 6 && !isNaN(sz) && sz >= 0 && sz <= 9) {
-            for (let i = 0; i < 6; i++) {
-                document.getElementById(`drawn-${i}`).value = nums[i];
-            }
-            document.getElementById('drawn-sz').value = sz;
-            resetCalcResult();
-            toast(`Ziehungszahlen für ${targetDE} aus CSV geladen.`, 'success');
+        if (result.status === 'error') {
+            setStatus('Fehler: ' + result.message);
             return;
         }
+
+        // Reload entries from server
+        entries = await api('entries');
+        render();
+
+        // Show results
+        const { newEntries, pendingEntries, results, drawsChecked, quotenSynced } = result;
+        const pendingWins = results.filter(r => !r.saved && r.wins && r.wins.length > 0);
+
+        if (newEntries > 0 || pendingWins.length > 0) {
+            showWinBanner(results);
+        }
+
+        let statusMsg = `&#10004; ${drawsChecked} Ziehungen geprüft`;
+        if (quotenSynced > 0) statusMsg += `, ${quotenSynced} Gewinnquoten geladen`;
+        if (newEntries > 0) statusMsg += ` – <strong>${newEntries} Gewinn(e) automatisch eingetragen!</strong>`;
+        if (pendingEntries > 0) statusMsg += ` – <strong style="color:#e67e22">${pendingEntries} brauchen manuelle Prüfung</strong>`;
+        if (newEntries === 0 && pendingEntries === 0) statusMsg += ' – kein neuer Gewinn.';
+        statusMsg += ` (${new Date().toLocaleString('de-DE')})`;
+        setStatus(statusMsg);
+
+    } catch (e) {
+        setStatus('Fehler beim Abruf: ' + e.message);
+    }
+}
+
+function setStatus(html) { document.getElementById('autoStatus').innerHTML = html; }
+
+function showWinBanner(results) {
+    const banner = document.getElementById('winBanner');
+    const detEl = document.getElementById('winDetails');
+    const totEl = document.getElementById('winTotal');
+    const actEl = document.getElementById('winActions');
+
+    let html = '';
+    let actHtml = '';
+    let totalSaved = 0;
+    let totalPending = 0;
+
+    for (const r of results) {
+        if (!r.wins || r.wins.length === 0) continue;
+        const dateFmt = formatDate(r.date);
+        const winsStr = r.wins.map(w =>
+            `SF${w.sf}: ${w.label}` + (w.amount !== null ? ` = ${euro(w.amount)}` : ' (Betrag offen)')
+        ).join(' · ');
+
+        if (r.saved) {
+            totalSaved += r.amount;
+            html += `<div><strong>${dateFmt}:</strong> ${escHtml(winsStr)} <span class="positive">&#10004; eingetragen</span></div>`;
+        } else {
+            totalPending += r.amount || 0;
+            html += `<div><strong>${dateFmt}:</strong> ${escHtml(winsStr)} <span style="color:#e67e22">&#9888; offen</span></div>`;
+            if (r.amount > 0) {
+                const noteText = r.wins.map(w => `SF${w.sf}:Kl.${w.klasse}`).join(',');
+                actHtml += `<button class="btn btn-primary btn-sm" onclick="prefillEntry('${r.date}',${r.amount},'${escHtml(noteText)}')">${euro(r.amount)} f&uuml;r ${isoToDE(r.date)} eintragen</button> `;
+            }
+        }
     }
 
-    toast(`Kein Eintrag für ${targetDE} in der CSV gefunden.`, 'error');
+    if (totalSaved > 0) totEl.textContent = `Automatisch eingetragen: ${euro(totalSaved)}`;
+    else if (totalPending > 0) totEl.textContent = `Offen: ${euro(totalPending)} – bitte Quoten prüfen!`;
+    else totEl.textContent = 'Gewinne erkannt – bitte Beträge prüfen!';
+
+    actHtml += `<a href="https://www.lotto.de/lotto-6aus49/gewinnzahlen" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">Quoten auf lotto.de &#8599;</a>`;
+
+    detEl.innerHTML = html;
+    actEl.innerHTML = actHtml;
+    banner.classList.add('active');
 }
+
+function prefillEntry(date, amount, note) {
+    document.getElementById('entryDate').value = date;
+    document.getElementById('win6aus49').value = amount.toFixed(2);
+    document.getElementById('entryNote').value = note;
+    document.getElementById('winBanner').classList.remove('active');
+    toast('Betrag ins Formular übernommen – bitte prüfen und speichern.','success');
+}
+
+/* ─────────────────────────────────────────
+   Manual Calc (client-side)
+───────────────────────────────────────── */
+let _calcAmt = 0, _calcNote = '';
+
+function berechneGewinn() {
+    const nums = [];
+    for (let i = 0; i < 6; i++) {
+        const n = parseInt(document.getElementById(`drawn-${i}`).value);
+        if (isNaN(n)||n<1||n>49) return toast(`Zahl ${i+1}: 1–49 eingeben.`,'error');
+        nums.push(n);
+    }
+    if (new Set(nums).size !== 6) return toast('Alle 6 Zahlen müssen verschieden sein.','error');
+    const sz = parseInt(document.getElementById('drawn-sz').value);
+    if (isNaN(sz)||sz<0||sz>9) return toast('Superzahl 0–9 eingeben.','error');
+
+    const active = spielfelder.filter(sf => sf.nums && sf.nums.length === 6);
+    if (!active.length) return toast('Keine Spielfelder hinterlegt.','error');
+
+    const rows = []; let fixTotal = 0, varCount = 0; const parts = [];
+
+    spielfelder.forEach((sf, idx) => {
+        if (!sf.nums || sf.nums.length !== 6) return;
+        const m = sf.nums.filter(n => nums.includes(n)).length;
+        const hasSZ = sf.superzahl === sz;
+        const kl = getPrizeKlasse(m, hasSZ);
+        if (!kl) { rows.push(`<div class="result-row"><span>SF ${idx+1}</span><span class="neutral">${m} Treffer</span></div>`); return; }
+        const info = PRIZE_KLASSEN[kl];
+        if (info.fixed) {
+            fixTotal += info.amount;
+            parts.push(`SF${idx+1}:Kl.${kl}`);
+            rows.push(`<div class="result-row"><span>SF ${idx+1} – ${info.label}</span><span class="positive">${euro(info.amount)}</span></div>`);
+        } else {
+            varCount++;
+            parts.push(`SF${idx+1}:Kl.${kl}`);
+            rows.push(`<div class="result-row"><span>SF ${idx+1} – ${info.label}</span><span style="color:#e67e22;font-weight:600">&#9888; variabel</span></div>`);
+        }
+    });
+
+    let summ = '<div class="result-summary">';
+    if (!fixTotal && !varCount) { summ += '<span class="neutral">Kein Gewinn.</span>'; }
+    else {
+        if (fixTotal > 0) summ += `Feste Gewinne: <strong class="positive">${euro(fixTotal)}</strong>`;
+        if (varCount > 0) summ += `${fixTotal?'<br>':''}<span style="color:#e67e22">&#9888; ${varCount} variable Klasse(n) – Betrag auf lotto.de prüfen!</span>`;
+        if (fixTotal > 0) {
+            _calcAmt = fixTotal; _calcNote = parts.join(', ').substring(0,80);
+            summ += `<br><button class="btn btn-primary btn-sm" style="margin-top:10px" onclick="uebernehmeCalc()">${euro(fixTotal)} in Formular</button>`;
+        }
+    }
+    summ += '</div>';
+
+    const el = document.getElementById('calcResult');
+    el.innerHTML = `<div class="result-title">Ergebnis f&uuml;r ${active.length} Spielfeld(er):</div>` + rows.join('') + summ;
+    el.style.display = 'block';
+}
+
+function uebernehmeCalc() {
+    document.getElementById('win6aus49').value = _calcAmt.toFixed(2);
+    if (!document.getElementById('entryNote').value.trim()) document.getElementById('entryNote').value = _calcNote;
+    toast('Betrag übernommen!','success');
+}
+
+/* ─────────────────────────────────────────
+   Helpers
+───────────────────────────────────────── */
+function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+let _toastTimer;
+function toast(msg, type='success') {
+    const el = document.getElementById('notify');
+    el.textContent = msg; el.className = `notify ${type} show`;
+    clearTimeout(_toastTimer);
+    _toastTimer = setTimeout(() => el.classList.remove('show'), 3500);
+}
+
+// Close modals on overlay click
+document.querySelectorAll('.modal-overlay').forEach(el => {
+    el.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('active'); });
+});
 
 /* ─────────────────────────────────────────
    Init
 ───────────────────────────────────────── */
-document.getElementById('entryDate').value = lastSaturday();
-
-// Close modals on overlay click
-document.getElementById('settingsModal').addEventListener('click', function(e) {
-    if (e.target === this) closeSettings();
-});
-document.getElementById('zahlenModal').addEventListener('click', function(e) {
-    if (e.target === this) closeZahlenModal();
-});
-
-updateCalcHint();
-render();
-
-// Auto-check for wins on page load
-autoCheckForWins();
-
-// Re-check every 30 minutes (for users who keep the page open)
-setInterval(autoCheckForWins, 30 * 60 * 1000);
+checkAuth();
 </script>
 </body>
 </html>

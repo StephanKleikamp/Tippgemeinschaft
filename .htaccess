@@ -1,0 +1,13 @@
+# Zugriff auf config.php von aussen blockieren
+<Files "config.php">
+    Require all denied
+</Files>
+
+# install.php nach Ersteinrichtung loeschen oder blockieren
+# <Files "install.php">
+#     Require all denied
+# </Files>
+
+# PHP-Fehler im Produktionsbetrieb nicht anzeigen
+php_flag display_errors Off
+php_flag log_errors On
