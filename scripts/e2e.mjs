@@ -69,7 +69,7 @@ async function test(name, fn, optionen = {}) {
 const text = (page, sel) => page.locator(sel).innerText();
 
 await test('Anmeldung: falsches Passwort wird abgelehnt, richtiges öffnet die App', async ({ page }) => {
-  assert.equal(await page.isVisible('#anmeldung'), true);
+  await page.waitForSelector('#anmeldung', { state: 'visible' }); // die Seite prüft zuerst, ob schon eine Sitzung besteht
   await page.fill('#passwort', 'ganz-sicher-falsch');
   await page.click('#anmeldeformular button[type=submit]');
   await page.waitForFunction(() => document.getElementById('anmeldefehler').textContent.length > 0);
