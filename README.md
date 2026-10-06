@@ -74,7 +74,8 @@ laufen lassen. Für Vorschauen mit HTTP-Basic-Auth `E2E_AUTH=benutzer:passwort` 
 
 ## Datenschutz
 
-Die Datenschutzerklärung unter https://stephan-kleikamp.de/datenschutz.html muss vor dem öffentlichen Schalten
-einen Abschnitt zu dieser App bekommen: Mitspielernamen, Tippscheine, Scheinnummer, Abrechnung auf dem eigenen Server,
-Sitzungscookie nach der Anmeldung, Abruf öffentlicher Gewinnzahlen bei lotto.de, Lotto Hessen und GitHub Pages
-(ohne Übermittlung von Nutzerdaten), Sicherungen 7 Tage.
+Die Datenschutzerklärung unter https://stephan-kleikamp.de/datenschutz.html enthält seit dem 06.10.2026 den Abschnitt 16
+zu dieser App (Mitspielernamen, Tippschein, Scheinnummer, Abrechnung auf dem eigenen Server, Sitzungscookie nach der
+Anmeldung, Abruf öffentlicher Gewinnzahlen ohne Übermittlung von Nutzerdaten, Sicherungen 7 Tage). Kommt Datenverarbeitung
+hinzu (Benachrichtigungen, Konten je Mitspieler, externe Dienste), zuerst den Abschnitt ändern. Der frühere Entwurf liegt
+noch in `docs/datenschutz-abschnitt.html`.
