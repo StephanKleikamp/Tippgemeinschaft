@@ -1,0 +1,565 @@
+// Oberfläche der Tippgemeinschaft. Alle Zahlen kommen fertig berechnet vom Server (/api/zustand),
+// hier wird nur dargestellt und eingegeben. Keine Bibliotheken, keine externen Adressen.
+
+const $ = (id) => document.getElementById(id);
+const euroFormat = new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' });
+const fe = (n) => euroFormat.format(n);
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const tag = (iso) => new Date(`${iso}T12:00:00`);
+const datumLang = (iso) => tag(iso).toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' });
+const datumKurz = (iso) => tag(iso).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+const plural = (n, eins, mehr) => (n === 1 ? eins : mehr);
+
+let z = null; // letzter Zustand vom Server
+let gewaehlt = null; // Datum der Ziehung in der Abgleich-Ansicht
+let abrufTimer = null;
+let verlaufAlle = false;
+const VERLAUF_ANFANG = 12;
+
+// ---- Schnittstelle ----
+
+async function api(methode, pfad, body) {
+  const antwort = await fetch(pfad, {
+    method: methode,
+    headers: body !== undefined ? { 'Content-Type': 'application/json' } : undefined,
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+    credentials: 'same-origin',
+  });
+  let daten = null;
+  try { daten = await antwort.json(); } catch { /* keine JSON-Antwort */ }
+  if (antwort.status === 401 && daten?.error === 'Nicht angemeldet.') {
+    zeigeAnmeldung();
+    throw new Error('Bitte neu anmelden.');
+  }
+  if (!antwort.ok) throw new Error(daten?.error || `Fehler ${antwort.status}`);
+  return daten;
+}
+
+let toastTimer;
+function toast(text, fehler = false) {
+  const el = $('toast');
+  el.textContent = text;
+  el.className = `toast zeigen${fehler ? ' fehler-toast' : ''}`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('zeigen'), 3600);
+}
+
+// ---- Anmeldung ----
+
+function zeigeAnmeldung() {
+  clearTimeout(abrufTimer);
+  z = null;
+  $('app').hidden = true;
+  $('anmeldung').hidden = false;
+  $('passwort').value = '';
+  $('passwort').focus();
+}
+
+async function zeigeApp() {
+  $('anmeldung').hidden = true;
+  $('app').hidden = false;
+  await lade();
+  if (z && !z.sync.laeuft && !z.sync.letzterVersuch) await starteAbruf(true);
+  else if (z?.sync.laeuft) beobachteAbruf();
+}
+
+$('anmeldeformular').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  $('anmeldefehler').textContent = '';
+  try {
+    await api('POST', '/api/anmelden', { passwort: $('passwort').value });
+    await zeigeApp();
+  } catch (err) {
+    $('anmeldefehler').textContent = err.message;
+  }
+});
+
+$('knopf-abmelden').addEventListener('click', async () => {
+  await api('POST', '/api/abmelden').catch(() => {});
+  zeigeAnmeldung();
+});
+
+// ---- Laden und Abrufen ----
+
+async function lade() {
+  z = await api('GET', '/api/zustand');
+  render();
+}
+
+async function starteAbruf(still = false) {
+  try {
+    const r = await api('POST', '/api/abruf');
+    if (!still && !r.gestartet && !r.sync.laeuft) toast('Gerade erst geprüft, bitte einen Moment warten.');
+    z.sync = r.sync;
+    renderStatus();
+    beobachteAbruf();
+  } catch (err) {
+    toast(err.message, true);
+  }
+}
+
+function beobachteAbruf(versuche = 0) {
+  clearTimeout(abrufTimer);
+  if (!z?.sync.laeuft || versuche > 60) return;
+  abrufTimer = setTimeout(async () => {
+    try {
+      await lade();
+    } catch { return; }
+    if (z.sync.laeuft) beobachteAbruf(versuche + 1);
+    else toast(z.sync.fehler ? 'Abruf mit Hinweisen beendet.' : 'Ziehungen sind aktuell.', Boolean(z.sync.fehler));
+  }, 2000);
+}
+
+$('knopf-abruf').addEventListener('click', () => starteAbruf(false));
+
+// ---- Darstellung ----
+
+function render() {
+  if (!z) return;
+  renderStatus();
+  renderKarten();
+  renderAbgleich();
+  renderSpieler();
+  renderVerlauf();
+  renderKorrekturen();
+}
+
+function zeitText(ms) {
+  if (!ms) return 'noch nie';
+  const d = new Date(ms);
+  const heute = new Date();
+  const uhr = d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+  return d.toDateString() === heute.toDateString() ? `heute ${uhr} Uhr` : `${d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })} ${uhr} Uhr`;
+}
+
+function renderStatus() {
+  const s = z.sync;
+  const teile = [];
+  if (s.laeuft) teile.push('<span class="drehen"></span>Ziehungen werden abgerufen …');
+  else teile.push(`Zuletzt geprüft: ${zeitText(s.letzterErfolg)}`);
+  teile.push(`Nächste Ziehung: ${datumLang(z.naechsterSpieltag)}`);
+  if (!s.laeuft && s.fehler) teile.push(`<span class="warnung">⚠ ${esc(s.fehler)}</span>`);
+  $('status').innerHTML = teile.join(' · ');
+  $('knopf-abruf').disabled = s.laeuft;
+}
+
+function renderKarten() {
+  const s = z.abrechnung.summe;
+  const mitGewinn = z.abrechnung.zeilen.filter((r) => r.gewinn > 0).length;
+  let gewinnUnter = `${mitGewinn} ${plural(mitGewinn, 'Spieltag', 'Spieltage')} mit Gewinn`;
+  if (s.gewinnKorrekturen) gewinnUnter += ` · davon Korrekturen ${fe(s.gewinnKorrekturen)}`;
+  if (s.offen) gewinnUnter = `+ ${s.geschaetzt ? `ca. ${fe(s.geschaetzt)} ` : ''}noch offen (${s.offen} ${plural(s.offen, 'Gewinn', 'Gewinne')} ohne Quote)`;
+  const bilanzKlasse = s.bilanz >= 0 ? 'gruen' : 'rot';
+  const pro = s.proSpieler;
+  $('karten').innerHTML = `
+    <div class="karte"><div class="karte-label">Gesamtkosten</div><div class="karte-wert rot">${fe(s.kosten)}</div><div class="karte-unter">${s.wochen} ${plural(s.wochen, 'Spieltag', 'Spieltage')} seit ${datumKurz(z.einstellungen.startDatum)}</div></div>
+    <div class="karte"><div class="karte-label">Gesamtgewinn</div><div class="karte-wert gruen">${fe(s.gewinn)}</div><div class="karte-unter">${gewinnUnter}</div></div>
+    <div class="karte"><div class="karte-label">Bilanz gesamt</div><div class="karte-wert ${bilanzKlasse}">${fe(s.bilanz)}</div><div class="karte-unter">${s.bilanz >= 0 ? '✓ Im Plus' : '✗ Im Minus'}</div></div>
+    <div class="karte"><div class="karte-label">Bilanz pro Spieler</div><div class="karte-wert ${pro.bilanz >= 0 ? 'gruen' : 'rot'}">${fe(pro.bilanz)}</div><div class="karte-unter">je ${fe(pro.kosten)} Kosten · je ${fe(pro.gewinn)} Gewinn</div></div>`;
+  $('wochen-badge').textContent = `${s.wochen} ${plural(s.wochen, 'Spieltag', 'Spieltage')}`;
+}
+
+// -- Abgleich mit dem Tippschein --
+
+function kugeln(nums, { gezogen = false, treffer = [] } = {}) {
+  return nums.map((n) => `<span class="kugel${gezogen ? ' gezogen-kugel' : ''}${treffer.includes(n) ? ' treffer' : ''}" aria-label="${n}${treffer.includes(n) ? ', Treffer' : ''}">${n}</span>`).join('');
+}
+
+function ziffern(text, { ab = Infinity, klasse = '' } = {}) {
+  return [...text].map((c, i) => `<span class="ziffer ${klasse}${i >= ab ? ' richtig' : ''}">${c}</span>`).join('');
+}
+
+const QUELLEN = { 'lotto.de': 'lotto.de', 'lotto-hessen': 'Lotto Hessen', archiv: 'Archiv (nur Zahlen)' };
+
+function quelleHtml(r, neueste) {
+  const zi = r.ziehung;
+  const teile = [`Quelle: ${QUELLEN[zi.quelle] ?? esc(zi.quelle)}`];
+  if (zi.geprueft === 'lotto-hessen') teile.push('✔ von Lotto Hessen bestätigt');
+  else if (zi.geprueft === 'abweichung') teile.push('<span class="warnung">⚠ Lotto Hessen meldet andere Zahlen, bitte auf lotto.de prüfen</span>');
+  else if (zi.quelle !== 'archiv' && neueste) teile.push('noch nicht gegengeprüft');
+  if (zi.quelle === 'archiv') teile.push('<span class="warnung">Spiel 77 und Super 6 fehlen hier noch</span>');
+  return teile.map((t) => `<span>${t}</span>`).join('');
+}
+
+function statusMarke(r) {
+  if (r.status === 'endgueltig') return '<span class="marke-status ok">✔ Quoten da</span>';
+  if (r.status === 'vorlaeufig') return '<span class="marke-status offen">⏳ Quoten fehlen noch</span>';
+  return '<span class="marke-status warte">steht aus</span>';
+}
+
+function ergebnisFeld(f) {
+  const richtige = `${f.treffer.length} Treffer${f.szTreffer ? ' + SZ' : ''}`;
+  if (!f.klasse) return `<span>${richtige} · kein Gewinn</span>`;
+  if (f.betrag !== null) return `<span class="betrag">${fe(f.betrag)}</span><span class="klasse">${richtige} · Klasse ${f.klasse}</span>`;
+  const schaetzung = f.geschaetzt ? `≈ ${fe(f.geschaetzt)}` : 'Betrag offen';
+  return `<span class="betrag offen">${schaetzung}</span><span class="klasse">${richtige} · Klasse ${f.klasse} · Quote noch nicht veröffentlicht</span>`;
+}
+
+function zusatzHtml(name, spiel, stellen) {
+  if (!spiel) return '';
+  const gewinnt = spiel.klasse && spiel.betrag !== null;
+  let ergebnis;
+  if (!spiel.gewinnzahl) ergebnis = '<span>Gewinnzahl noch nicht verfügbar</span>';
+  else if (!spiel.klasse) ergebnis = `<span>${spiel.endziffern} Endziffern · kein Gewinn</span>`;
+  else if (spiel.betrag === null) ergebnis = `<span class="betrag offen">Betrag offen</span><span class="klasse">${spiel.endziffern} Endziffern · Klasse ${spiel.klasse}</span>`;
+  else ergebnis = `<span class="betrag">${fe(spiel.betrag)}</span><span class="klasse">${spiel.endziffern} Endziffern · Klasse ${spiel.klasse}</span>`;
+  const gezogen = spiel.gewinnzahl ? ziffern(spiel.gewinnzahl, { klasse: 'gezogen-ziffer' }) : '<span class="klein-grau">–</span>';
+  return `
+    <div class="zusatz${gewinnt ? ' gewinn' : ''}">
+      <div class="zusatz-name">${name}<div class="klein-grau">${stellen} Stellen</div></div>
+      <div class="ziffern-zeilen">
+        <div class="ziffern-zeile"><span class="vorne">Euer Schein</span>${ziffern(spiel.losnummer, { ab: stellen - spiel.endziffern })}</div>
+        <div class="ziffern-zeile"><span class="vorne">Gezogen</span>${gezogen}</div>
+      </div>
+      <div class="ergebnis">${ergebnis}</div>
+    </div>`;
+}
+
+function renderAbgleich() {
+  const ziel = $('abgleich');
+  const zeilen = z.abrechnung.zeilen;
+  if (!z.scheine.length) {
+    ziel.innerHTML = `<div class="abgleich"><div class="abgleich-leer"><h2>Noch kein Tippschein</h2><p>Trage eure 8 Spielfelder und die Scheinnummer ein. Dann wird jede Ziehung automatisch abgeglichen.</p><button class="btn primaer" type="button" data-aktion="schein">🎟️ Tippschein eintragen</button></div></div>`;
+    return;
+  }
+  if (!zeilen.length) {
+    ziel.innerHTML = `<div class="abgleich"><div class="abgleich-leer"><h2>Noch keine Ziehung</h2><p>Der erste Spieltag ist der ${datumLang(z.einstellungen.startDatum)}.</p></div></div>`;
+    return;
+  }
+  if (!gewaehlt || !zeilen.some((r) => r.datum === gewaehlt)) {
+    gewaehlt = ([...zeilen].reverse().find((r) => r.ziehung) ?? zeilen[zeilen.length - 1]).datum;
+  }
+  const absteigend = [...zeilen].reverse();
+  const index = absteigend.findIndex((r) => r.datum === gewaehlt);
+  const r = absteigend[index];
+  const optionen = absteigend.map((x) => `<option value="${x.datum}"${x.datum === gewaehlt ? ' selected' : ''}>${datumLang(x.datum)}</option>`).join('');
+
+  let koerper;
+  if (!r.ziehung) {
+    koerper = `<div class="abgleich-leer">Die Ziehung vom ${datumLang(r.datum)} liegt noch nicht vor. Sobald lotto.de die Zahlen hat, erscheinen sie hier automatisch.</div>`;
+  } else {
+    const a = r.auswertung;
+    const felder = a.lotto.felder.map((f) => `
+      <div class="feld ${f.klasse ? 'gewinn' : 'kein'}">
+        <span class="feld-name">${f.label}</span>
+        <span class="feld-zahlen">${kugeln(f.nums, { treffer: f.treffer })}<span class="trenner-sz">|</span><span class="kugel sz${f.szTreffer ? ' treffer' : ''}" aria-label="Superzahl ${f.sz}${f.szTreffer ? ', Treffer' : ''}">${f.sz}</span></span>
+        <span class="ergebnis">${ergebnisFeld(f)}</span>
+      </div>`).join('');
+    const noch = a.offen ? ` · <span class="warnung">+ ${a.geschaetzt ? `ca. ${fe(a.geschaetzt)}` : 'Betrag'} offen</span>` : '';
+    koerper = `
+      <div class="abgleich-quelle">${quelleHtml(r, !zeilen.some((x) => x.ziehung && x.datum > r.datum))}</div>
+      <div class="gezogen">
+        <div class="gezogen-gruppe"><span class="gezogen-name">6aus49</span>${kugeln(r.ziehung.nums, { gezogen: true })}<span class="kugel gezogen-kugel sz" aria-label="Superzahl ${r.ziehung.sz}">${r.ziehung.sz}</span></div>
+      </div>
+      <div class="tippschein">
+        <div class="tippschein-titel">Euer Tippschein · 6aus49</div>
+        ${felder}
+        ${a.spiel77 || a.super6 ? '<div class="tippschein-titel">Zusatzlotterien</div>' : ''}
+        ${zusatzHtml('Spiel 77', a.spiel77, 7)}
+        ${zusatzHtml('Super 6', a.super6, 6)}
+      </div>
+      <div class="abgleich-summe">
+        <span>Gewinn dieser Ziehung: <strong class="${r.gewinn > 0 ? 'gruen' : ''}">${fe(r.gewinn)}</strong>${noch}</span>
+        <span>Einsatz: <strong>${fe(r.kosten)}</strong></span>
+        <span>Bilanz bis hier: <strong class="${r.saldo >= 0 ? 'gruen' : 'rot'}">${fe(r.saldo)}</strong></span>
+      </div>`;
+  }
+
+  ziel.innerHTML = `
+    <div class="abgleich">
+      <div class="abgleich-kopf">
+        <h2>Abgleich: ${datumLang(r.datum)}</h2>
+        ${statusMarke(r)}
+        <div class="abgleich-wahl">
+          <button class="btn sekundaer klein" type="button" data-aktion="aelter" aria-label="Ältere Ziehung"${index >= absteigend.length - 1 ? ' disabled' : ''}>◀</button>
+          <select id="abgleich-datum" aria-label="Ziehung wählen">${optionen}</select>
+          <button class="btn sekundaer klein" type="button" data-aktion="neuer" aria-label="Neuere Ziehung"${index === 0 ? ' disabled' : ''}>▶</button>
+        </div>
+      </div>
+      ${koerper}
+    </div>`;
+}
+
+$('abgleich').addEventListener('click', (e) => {
+  const knopf = e.target.closest('[data-aktion]');
+  if (!knopf) return;
+  const absteigend = [...z.abrechnung.zeilen].reverse();
+  const index = absteigend.findIndex((r) => r.datum === gewaehlt);
+  if (knopf.dataset.aktion === 'aelter' && index < absteigend.length - 1) gewaehlt = absteigend[index + 1].datum;
+  else if (knopf.dataset.aktion === 'neuer' && index > 0) gewaehlt = absteigend[index - 1].datum;
+  else if (knopf.dataset.aktion === 'schein') return oeffneSchein();
+  renderAbgleich();
+});
+$('abgleich').addEventListener('change', (e) => {
+  if (e.target.id === 'abgleich-datum') {
+    gewaehlt = e.target.value;
+    renderAbgleich();
+  }
+});
+
+// -- Tabellen --
+
+function renderSpieler() {
+  const s = z.abrechnung.summe;
+  const n = z.einstellungen.spieler.length;
+  const p = s.proSpieler;
+  $('spieler-tabelle').innerHTML = `
+    <thead><tr><th>Spieler</th><th class="zahl">Kostenanteil</th><th class="zahl">Gewinnanteil</th><th class="zahl">Bilanz</th></tr></thead>
+    <tbody>
+      ${z.einstellungen.spieler.map((name) => `<tr><td><strong>${esc(name)}</strong></td><td class="zahl rot">${fe(p.kosten)}</td><td class="zahl gruen">${fe(p.gewinn)}</td><td class="zahl ${p.bilanz >= 0 ? 'gruen' : 'rot'}"><strong>${fe(p.bilanz)}</strong></td></tr>`).join('')}
+      <tr class="summe"><td>Gesamt (${n})</td><td class="zahl">${fe(s.kosten)}</td><td class="zahl">${fe(s.gewinn)}</td><td class="zahl ${s.bilanz >= 0 ? 'gruen' : 'rot'}">${fe(s.bilanz)}</td></tr>
+    </tbody>`;
+}
+
+const betragZelle = (wert, offen) => (offen ? '<span class="warnung">offen</span>' : wert ? `<span class="gruen">${fe(wert)}</span>` : '<span class="grau">–</span>');
+
+function renderVerlauf() {
+  const alle = [...z.abrechnung.zeilen].reverse();
+  const zeilen = verlaufAlle || alle.length <= VERLAUF_ANFANG + 3 ? alle : alle.slice(0, VERLAUF_ANFANG);
+  const kuerzbar = alle.length > VERLAUF_ANFANG + 3;
+  $('verlauf-zahl').innerHTML = alle.length
+    ? `${alle.length} ${plural(alle.length, 'Spieltag', 'Spieltage')}${kuerzbar ? ` · <button class="btn sekundaer klein" type="button" id="verlauf-umschalten">${verlaufAlle ? 'Weniger anzeigen' : 'Alle anzeigen'}</button>` : ''}`
+    : '';
+  const kopf = '<thead><tr><th>Datum</th><th>Gezogen</th><th class="zahl">6aus49</th><th class="zahl">Spiel 77</th><th class="zahl">Super 6</th><th class="zahl">Gewinn</th><th class="zahl">Einsatz</th><th class="zahl">Bilanz</th></tr></thead>';
+  if (!zeilen.length) {
+    $('verlauf-tabelle').innerHTML = `${kopf}<tbody><tr><td class="leer" colspan="8">Noch keine Spieltage.</td></tr></tbody>`;
+    return;
+  }
+  $('verlauf-tabelle').innerHTML = `${kopf}<tbody>${zeilen.map((r) => {
+    const a = r.auswertung;
+    const offenLotto = a ? a.lotto.felder.some((f) => f.offen) : false;
+    const gezogen = r.ziehung
+      ? `<span class="mini-zahlen"><b>${r.ziehung.nums.join(' ')}</b> · SZ ${r.ziehung.sz}</span>`
+      : '<span class="grau">steht aus</span>';
+    return `<tr class="klickbar${r.datum === gewaehlt ? ' gewaehlt' : ''}" data-datum="${r.datum}" tabindex="0">
+      <td class="nowrap">${datumLang(r.datum)}<br>${statusMarke(r)}</td>
+      <td>${gezogen}</td>
+      <td class="zahl">${a ? betragZelle(a.gewinnLotto, offenLotto) : '<span class="grau">–</span>'}</td>
+      <td class="zahl">${a?.spiel77 ? betragZelle(a.gewinnSpiel77, a.spiel77.offen) : '<span class="grau">–</span>'}</td>
+      <td class="zahl">${a?.super6 ? betragZelle(a.gewinnSuper6, a.super6.offen) : '<span class="grau">–</span>'}</td>
+      <td class="zahl"><strong>${r.gewinn ? fe(r.gewinn) : '–'}</strong></td>
+      <td class="zahl rot">${fe(r.kosten)}</td>
+      <td class="zahl ${r.saldo >= 0 ? 'gruen' : 'rot'}"><strong>${fe(r.saldo)}</strong></td>
+    </tr>`;
+  }).join('')}</tbody>`;
+}
+
+function waehleAusVerlauf(zeile) {
+  if (!zeile?.dataset.datum) return;
+  gewaehlt = zeile.dataset.datum;
+  renderAbgleich();
+  renderVerlauf();
+  $('abgleich').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+$('verlauf-tabelle').addEventListener('click', (e) => waehleAusVerlauf(e.target.closest('tr')));
+$('verlauf-zahl').addEventListener('click', (e) => {
+  if (e.target.id !== 'verlauf-umschalten') return;
+  verlaufAlle = !verlaufAlle;
+  renderVerlauf();
+});
+$('verlauf-tabelle').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    waehleAusVerlauf(e.target.closest('tr'));
+  }
+});
+
+function renderKorrekturen() {
+  const kopf = '<thead><tr><th>Datum</th><th class="zahl">6aus49</th><th class="zahl">Spiel 77</th><th class="zahl">Super 6</th><th>Notiz</th><th></th></tr></thead>';
+  const k = z.korrekturen;
+  if (!k.length) {
+    $('korrektur-tabelle').innerHTML = `${kopf}<tbody><tr><td class="leer" colspan="6">Keine Korrekturen.</td></tr></tbody>`;
+    return;
+  }
+  const betrag = (n) => (n ? `<span class="${n > 0 ? 'gruen' : 'rot'}">${fe(n)}</span>` : '<span class="grau">–</span>');
+  $('korrektur-tabelle').innerHTML = `${kopf}<tbody>${k.map((x) => `<tr>
+    <td class="nowrap">${datumKurz(x.datum)}</td><td class="zahl">${betrag(x.lotto)}</td><td class="zahl">${betrag(x.spiel77)}</td><td class="zahl">${betrag(x.super6)}</td>
+    <td class="grau">${esc(x.notiz)}</td>
+    <td class="zahl"><button class="btn symbol" type="button" data-loeschen="${x.id}" aria-label="Buchung löschen">✕</button></td></tr>`).join('')}</tbody>`;
+}
+
+$('korrektur-tabelle').addEventListener('click', async (e) => {
+  const knopf = e.target.closest('[data-loeschen]');
+  if (!knopf || !confirm('Diese Buchung wirklich löschen?')) return;
+  try {
+    z = await api('DELETE', `/api/korrekturen/${knopf.dataset.loeschen}`);
+    render();
+    toast('Buchung gelöscht.');
+  } catch (err) { toast(err.message, true); }
+});
+
+// ---- Dialoge ----
+
+function oeffneDialog(dialog) {
+  dialog.showModal();
+}
+document.querySelectorAll('dialog').forEach((d) => {
+  d.addEventListener('click', (e) => { if (e.target === d) d.close(); });
+  d.querySelectorAll('[data-schliessen]').forEach((b) => b.addEventListener('click', () => d.close()));
+});
+
+// -- Tippschein --
+
+let scheinWahl = 'neu';
+
+function scheinFelderZeichnen(felder) {
+  $('schein-felder').innerHTML = Array.from({ length: 8 }, (_, i) => {
+    const f = felder[i] ?? { nums: [], sz: null };
+    return `<tr><td class="feld-nr">${'ABCDEFGH'[i]}</td>
+      <td><input type="text" id="sf-nums-${i}" value="${f.nums.join(' ')}" placeholder="z. B. 3 10 16 20 30 41" autocomplete="off" aria-label="Feld ${'ABCDEFGH'[i]}, Zahlen"></td>
+      <td><input type="number" class="sz-eingabe" id="sf-sz-${i}" min="0" max="9" value="${f.sz ?? ''}" placeholder="0–9" aria-label="Feld ${'ABCDEFGH'[i]}, Superzahl"></td></tr>`;
+  }).join('');
+}
+
+function scheinFuellen(wahl) {
+  scheinWahl = wahl;
+  const vorhanden = z.scheine.find((s) => String(s.id) === String(wahl));
+  const vorlage = vorhanden ?? z.scheine[z.scheine.length - 1] ?? null;
+  const erster = !z.scheine.length || (vorhanden && vorhanden.id === z.scheine[0].id);
+  scheinFelderZeichnen(vorlage?.felder ?? []);
+  $('schein-ab').value = vorhanden ? vorhanden.gueltigAb : (z.scheine.length ? z.naechsterSpieltag : z.einstellungen.startDatum);
+  $('schein-losnummer').value = vorlage?.losnummer ?? '';
+  $('schein-kosten').value = vorlage?.kosten ?? 13.35;
+  $('schein-spiel77').checked = vorlage?.spiel77 ?? true;
+  $('schein-super6').checked = vorlage?.super6 ?? true;
+  $('schein-loeschen').hidden = !vorhanden;
+  $('schein-fehler').textContent = '';
+  $('schein-hinweis').textContent = erster
+    ? 'Der erste Schein gilt auch für alle Spieltage davor.'
+    : 'Gilt ab diesem Spieltag. Frühere Spieltage werden weiter mit den bisherigen Zahlen abgerechnet.';
+}
+
+function oeffneSchein() {
+  const auswahl = $('schein-auswahl');
+  auswahl.innerHTML = z.scheine.map((s) => `<option value="${s.id}">ab ${datumKurz(s.gueltigAb)} · ${s.felder.filter((f) => f.nums.length).length} Felder · ${fe(s.kosten)}</option>`).join('')
+    + `<option value="neu">+ Neuer Schein ab einem Spieltag …</option>`;
+  const start = z.scheine.length ? String(z.scheine[z.scheine.length - 1].id) : 'neu';
+  auswahl.value = start;
+  scheinFuellen(start);
+  oeffneDialog($('dialog-schein'));
+}
+
+$('knopf-schein').addEventListener('click', oeffneSchein);
+$('schein-auswahl').addEventListener('change', (e) => scheinFuellen(e.target.value));
+
+function scheinLesen() {
+  const felder = Array.from({ length: 8 }, (_, i) => {
+    const text = $(`sf-nums-${i}`).value.trim();
+    const sz = $(`sf-sz-${i}`).value.trim();
+    return { nums: text ? text.split(/[^0-9]+/).filter(Boolean).map(Number) : [], sz: sz === '' ? null : Number(sz) };
+  });
+  return {
+    gueltigAb: $('schein-ab').value,
+    felder,
+    losnummer: $('schein-losnummer').value,
+    kosten: Number($('schein-kosten').value),
+    spiel77: $('schein-spiel77').checked,
+    super6: $('schein-super6').checked,
+  };
+}
+
+$('schein-formular').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  $('schein-fehler').textContent = '';
+  try {
+    z = scheinWahl === 'neu'
+      ? await api('POST', '/api/scheine', scheinLesen())
+      : await api('PUT', `/api/scheine/${scheinWahl}`, scheinLesen());
+    $('dialog-schein').close();
+    render();
+    toast('Tippschein gespeichert.');
+  } catch (err) {
+    $('schein-fehler').textContent = err.message;
+  }
+});
+
+$('schein-loeschen').addEventListener('click', async () => {
+  if (!confirm('Diesen Schein wirklich löschen? Die Abrechnung wird neu berechnet.')) return;
+  try {
+    z = await api('DELETE', `/api/scheine/${scheinWahl}`);
+    $('dialog-schein').close();
+    render();
+    toast('Schein gelöscht.');
+  } catch (err) {
+    $('schein-fehler').textContent = err.message;
+  }
+});
+
+// -- Einstellungen --
+
+$('knopf-einstellungen').addEventListener('click', () => {
+  $('einst-spieler').value = z.einstellungen.spieler.join('\n');
+  $('einst-start').value = z.einstellungen.startDatum;
+  $('einst-fehler').textContent = '';
+  $('pw-fehler').textContent = '';
+  $('pw-alt').value = '';
+  $('pw-neu').value = '';
+  oeffneDialog($('dialog-einstellungen'));
+});
+
+$('einstellungen-formular').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  $('einst-fehler').textContent = '';
+  try {
+    z = await api('PUT', '/api/einstellungen', {
+      spieler: $('einst-spieler').value.split('\n').map((s) => s.trim()).filter(Boolean),
+      startDatum: $('einst-start').value,
+    });
+    $('dialog-einstellungen').close();
+    render();
+    toast('Einstellungen gespeichert.');
+    beobachteAbruf();
+  } catch (err) {
+    $('einst-fehler').textContent = err.message;
+  }
+});
+
+$('passwort-formular').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  $('pw-fehler').textContent = '';
+  try {
+    await api('PUT', '/api/passwort', { aktuell: $('pw-alt').value, neu: $('pw-neu').value });
+    $('pw-alt').value = '';
+    $('pw-neu').value = '';
+    toast('Passwort geändert. Andere Geräte müssen sich neu anmelden.');
+  } catch (err) {
+    $('pw-fehler').textContent = err.message;
+  }
+});
+
+// -- Korrekturbuchung --
+
+$('knopf-korrektur').addEventListener('click', () => {
+  $('k-datum').value = z.heute;
+  ['k-lotto', 'k-spiel77', 'k-super6', 'k-notiz'].forEach((id) => { $(id).value = ''; });
+  $('k-fehler').textContent = '';
+  oeffneDialog($('dialog-korrektur'));
+});
+
+$('korrektur-formular').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  $('k-fehler').textContent = '';
+  const zahl = (id) => ($(id).value === '' ? 0 : Number($(id).value));
+  try {
+    z = await api('POST', '/api/korrekturen', {
+      datum: $('k-datum').value, lotto: zahl('k-lotto'), spiel77: zahl('k-spiel77'), super6: zahl('k-super6'), notiz: $('k-notiz').value,
+    });
+    $('dialog-korrektur').close();
+    render();
+    toast('Buchung gespeichert.');
+  } catch (err) {
+    $('k-fehler').textContent = err.message;
+  }
+});
+
+// ---- Start ----
+
+(async () => {
+  try {
+    const { angemeldet } = await api('GET', '/api/sitzung');
+    if (angemeldet) await zeigeApp();
+    else zeigeAnmeldung();
+  } catch {
+    zeigeAnmeldung();
+  }
+})();

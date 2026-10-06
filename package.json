@@ -1,0 +1,16 @@
+{
+  "name": "tippgemeinschaft",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Lotto-Tippgemeinschaft: Gewinne aus 6aus49, Spiel 77 und Super 6 automatisch gegen den Tippschein abgleichen und abrechnen.",
+  "engines": { "node": ">=24" },
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning server/index.js",
+    "test": "node --disable-warning=ExperimentalWarning --test test/*.test.js",
+    "e2e": "node scripts/e2e.mjs"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}

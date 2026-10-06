@@ -1,0 +1,80 @@
+# Tippgemeinschaft
+
+Lotto-Tippgemeinschaft für 6aus49, Spiel 77 und Super 6: Die App holt die amtlichen Ziehungen samt Quoten,
+gleicht sie mit dem Tippschein ab und rechnet Gewinne, Kosten und Bilanz je Mitspieler aus.
+
+Dieser Branch (`coolify`) ist die Fassung für den eigenen Server (Coolify, Node + SQLite). Die ursprüngliche
+PHP/MySQL-Fassung für Strato liegt unverändert auf dem Standard-Branch.
+
+## Die Idee: Tatsachen speichern, alles andere rechnen
+
+Die PHP-Fassung trug Gewinne als „Einträge“ in die Datenbank ein, sobald ein Skript sie fand. Das war fehleranfällig:
+Quoten kamen aus dem Quelltext von lotto.de (die Seite gibt es so nicht mehr), Spiel 77 und Super 6 mussten von Hand
+eingetragen werden, und eine Korrektur am Schein änderte die Vergangenheit nicht.
+
+Hier werden nur **Tatsachen** gespeichert: Tippscheine, amtliche Ziehungen mit Quoten, Einstellungen und
+Korrekturbuchungen. Gewinne, Kosten und Bilanz berechnet `server/rules.js` bei jeder Anfrage neu.
+
+- **Jede Ziehung wird vollständig ausgewertet**: 6aus49 je Feld (Treffer, Superzahl, Klasse, Betrag) sowie Spiel 77 und
+  Super 6 über die Endziffern der Scheinnummer (von rechts, 7 beziehungsweise 6 Stellen).
+- **Vorläufig und endgültig**: Die Zahlen kommen am Ziehungsabend, die Quoten laut Stichprobe erst bis zum Montagmorgen.
+  Bis dahin gelten die festen Beträge (6aus49 Klasse 9, Spiel 77 Klasse 2 bis 7, Super 6) als sicher, offene Klassen
+  werden nur als „≈ Schätzung“ (Median der letzten 8 Ziehungen) angezeigt und nicht in die Summen gerechnet.
+- **Zwei Quellen**: lotto.de liefert alles, auch rückwirkend. Die neueste Ziehung wird mit Lotto Hessen gegengeprüft
+  („✔ bestätigt“, bei Abweichung eine Warnung). Fällt lotto.de aus, springen Lotto Hessen und das GitHub-Archiv ein.
+- **Tippscheine mit Gültigkeit**: Ändert die Gruppe ihre Zahlen oder den Preis, gilt ein neuer Schein ab einem
+  Spieltag. Frühere Wochen bleiben mit den alten Zahlen abgerechnet. Eine Korrektur am ersten Schein rechnet
+  alles neu.
+- **Nachvollziehbar**: Die Ansicht „Abgleich“ zeigt je Ziehung den Tippschein mit markierten Treffern, die Ziffern von
+  Spiel 77 und Super 6 und die Rechnung bis zur Bilanz.
+- **Korrekturbuchungen** bleiben für alles, was von den amtlichen Zahlen abweicht (zum Beispiel eine Gutschrift der
+  Annahmestelle).
+
+## Betrieb
+
+| | |
+| --- | --- |
+| Adresse | https://lotto.stephan-kleikamp.de |
+| Dienst | Node 24, Express 5, SQLite (`node:sqlite`), keine weiteren Abhängigkeiten, kein Build-Schritt |
+| Daten | Volume auf `/data`: `tipp.db`, tägliche Sicherungen in `/data/backups` (7 Tage, ab 3 Uhr) |
+| Variablen | `INITIAL_PASSWORD`: Passwort beim ersten Start (danach zählt nur der Hash in der Datenbank, änderbar in den Einstellungen) |
+| Zeitplan | Abruf nach dem Ziehungsabend alle 15 Minuten bis alle Quoten da sind, sonst einmal am Tag. „Jetzt prüfen“ löst ihn von Hand aus (30 Sekunden Pause) |
+| Verwaltung | im Container: `node server/cli.js passwort <neues>` und `node server/cli.js status` |
+
+- Anmeldung mit einem gemeinsamen Passwort (scrypt-Hash). Das Sitzungscookie `tipp_session` ist HttpOnly, SameSite=Lax,
+  Secure und 30 Tage gültig. Nach 8 Fehlversuchen gilt 10 Minuten Sperre (nur ein Hash der IP-Adresse im Arbeitsspeicher).
+- Kein Zugriffsprotokoll, keine externen Schriften oder Skripte, `noindex`. Strenge CSP, Schreibzugriffe nur von der
+  eigenen Adresse.
+- Sicherung zurückspielen: Datei aus `/data/backups` als `/data/tipp.db` einsetzen (und `tipp.db-wal`/`-shm` löschen).
+- Gespielt wird nur samstags. Mittwochsziehungen werden nicht geholt.
+
+## Datenquellen
+
+| Quelle | Wofür |
+| --- | --- |
+| `https://www.lotto.de/api/stats/entities.lotto/history/<Jahr>` und `/draws/<Datum>` | alle Ziehungstage, Zahlen, Spiel 77, Super 6 und Quoten. Schnittstelle der lotto.de-Webseite, nicht dokumentiert |
+| `https://services.lotto-hessen.de/spielinformationen/…` | nur die letzte Ziehung: Gegenprüfung und Ersatz |
+| `https://johannesfriedrich.github.io/LottoNumberArchive/` | Zahlen seit 1955 ohne Quoten, letzter Notnagel |
+
+Der Server fragt nur Gewinnzahlen ab. Es werden keine Angaben der Tippgemeinschaft an diese Dienste übertragen.
+Ändert lotto.de die Schnittstelle, melden die Statuszeile und die Ziehungsansicht das (Quelle „Lotto Hessen“ oder
+„Archiv“); die Normalisierung steht in `server/sources.js` und wird mit echten Antworten in `test/fixtures` geprüft.
+
+## Entwicklung
+
+```bash
+npm install
+INITIAL_PASSWORD=geheim-1234 DATA_DIR=.data PORT=3000 COOKIE_INSECURE=1 npm start
+npm test                                    # 53 Tests: Regeln, Quellen, Abruf, Sicherung, Schnittstelle
+E2E_PASSWORD=geheim-1234 npm run e2e -- http://127.0.0.1:3000/ [--schreiben]   # Browser-Tests (Playwright)
+```
+
+Die E2E-Tests mit `--schreiben` legen Buchungen an und löschen sie wieder. Gegen die echte Instanz nur ohne diese Option
+laufen lassen. Für Vorschauen mit HTTP-Basic-Auth `E2E_AUTH=benutzer:passwort` setzen.
+
+## Datenschutz
+
+Die Datenschutzerklärung unter https://stephan-kleikamp.de/datenschutz.html muss vor dem öffentlichen Schalten
+einen Abschnitt zu dieser App bekommen: Mitspielernamen, Tippscheine, Scheinnummer, Abrechnung auf dem eigenen Server,
+Sitzungscookie nach der Anmeldung, Abruf öffentlicher Gewinnzahlen bei lotto.de, Lotto Hessen und GitHub Pages
+(ohne Übermittlung von Nutzerdaten), Sicherungen 7 Tage.

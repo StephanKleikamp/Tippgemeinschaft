@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#1a252f">
+  <title>Tippgemeinschaft</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+
+<main id="anmeldung" class="anmeldung" hidden>
+  <form id="anmeldeformular" class="anmeldebox">
+    <h1>🍀 Tippgemeinschaft</h1>
+    <p class="unter">Lotto 6aus49 · Spiel 77 · Super 6</p>
+    <p id="anmeldefehler" class="fehler" role="alert"></p>
+    <label class="sr-only" for="passwort">Passwort</label>
+    <input type="password" id="passwort" name="passwort" placeholder="Passwort" autocomplete="current-password" required>
+    <button class="btn primaer" type="submit">Anmelden</button>
+  </form>
+</main>
+
+<div id="app" hidden>
+  <header class="kopf">
+    <div class="marke">
+      <h1>🍀 Tippgemeinschaft</h1>
+      <p>Lotto 6aus49 · Spiel 77 · Super 6</p>
+    </div>
+    <div class="kopf-knoepfe">
+      <button class="btn hell klein" id="knopf-abruf" type="button">🔄 Jetzt prüfen</button>
+      <button class="btn hell klein" id="knopf-schein" type="button">🎟️ Tippschein</button>
+      <button class="btn hell klein" id="knopf-einstellungen" type="button">⚙️ Einstellungen</button>
+      <button class="btn hell klein" id="knopf-abmelden" type="button">Abmelden</button>
+    </div>
+  </header>
+
+  <main class="inhalt">
+    <p id="status" class="status" aria-live="polite"></p>
+    <section id="karten" class="karten" aria-label="Zusammenfassung"></section>
+    <section id="abgleich" aria-label="Abgleich mit dem Tippschein"></section>
+
+    <section>
+      <div class="abschnitt-kopf"><h2>Mitspieler</h2><span id="wochen-badge" class="badge"></span></div>
+      <div class="tabelle-rahmen"><table id="spieler-tabelle"></table></div>
+    </section>
+
+    <section>
+      <div class="abschnitt-kopf"><h2>Verlauf</h2><span id="verlauf-zahl" class="klein-grau"></span></div>
+      <div class="tabelle-rahmen"><table id="verlauf-tabelle"></table></div>
+    </section>
+
+    <section>
+      <div class="abschnitt-kopf">
+        <h2>Korrekturbuchungen</h2>
+        <button class="btn sekundaer klein" id="knopf-korrektur" type="button">+ Buchung</button>
+      </div>
+      <p class="hinweis">Gewinne aus den Ziehungen werden automatisch berechnet. Hier nur eintragen, was davon abweicht, zum Beispiel eine Gutschrift der Annahmestelle (Minus für Abzüge).</p>
+      <div class="tabelle-rahmen"><table id="korrektur-tabelle"></table></div>
+    </section>
+  </main>
+
+  <footer class="fuss">
+    <p>Daten: lotto.de, gegengeprüft mit Lotto Hessen. Alle Angaben ohne Gewähr, maßgeblich sind die amtlichen Gewinnzahlen und Quoten der Lotteriegesellschaften.</p>
+    <p><a href="https://stephan-kleikamp.de/#impressum" target="_blank" rel="noopener">Impressum</a> · <a href="https://stephan-kleikamp.de/datenschutz.html" target="_blank" rel="noopener">Datenschutz</a></p>
+  </footer>
+</div>
+
+<!-- Tippschein -->
+<dialog id="dialog-schein" aria-labelledby="schein-titel">
+  <form id="schein-formular" method="dialog" class="dialog-form">
+    <h2 id="schein-titel">🎟️ Tippschein</h2>
+    <div class="zeile">
+      <label for="schein-auswahl">Schein</label>
+      <select id="schein-auswahl"></select>
+    </div>
+    <div class="zeile">
+      <label for="schein-ab">Gilt ab (Spieltag)</label>
+      <input type="date" id="schein-ab" required>
+    </div>
+    <p class="hinweis" id="schein-hinweis"></p>
+    <table class="felder-tabelle">
+      <thead><tr><th scope="col">Feld</th><th scope="col">6 Zahlen (1–49), mit Leerzeichen getrennt</th><th scope="col">SZ</th></tr></thead>
+      <tbody id="schein-felder"></tbody>
+    </table>
+    <div class="raster-2">
+      <div class="zeile">
+        <label for="schein-losnummer">Scheinnummer (7 Ziffern)</label>
+        <input type="text" id="schein-losnummer" inputmode="numeric" maxlength="9" autocomplete="off" placeholder="z. B. 1234567">
+      </div>
+      <div class="zeile">
+        <label for="schein-kosten">Kosten pro Woche (€)</label>
+        <input type="number" id="schein-kosten" min="0.01" step="0.01" required>
+      </div>
+    </div>
+    <div class="haken">
+      <label><input type="checkbox" id="schein-spiel77"> Spiel 77 spielen</label>
+      <label><input type="checkbox" id="schein-super6"> Super 6 spielen</label>
+    </div>
+    <p class="hinweis">Spiel 77 vergleicht alle 7 Ziffern der Scheinnummer, Super 6 die letzten 6, jeweils von rechts.</p>
+    <p class="fehler" id="schein-fehler" role="alert"></p>
+    <div class="dialog-knoepfe">
+      <button class="btn primaer" type="submit" id="schein-speichern">Speichern</button>
+      <button class="btn sekundaer" type="button" data-schliessen>Abbrechen</button>
+      <button class="btn gefahr rechts" type="button" id="schein-loeschen">Schein löschen</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Einstellungen -->
+<dialog id="dialog-einstellungen" aria-labelledby="einstellungen-titel">
+  <form id="einstellungen-formular" method="dialog" class="dialog-form">
+    <h2 id="einstellungen-titel">⚙️ Einstellungen</h2>
+    <div class="zeile">
+      <label for="einst-spieler">Mitspieler (ein Name pro Zeile)</label>
+      <textarea id="einst-spieler" rows="4" required></textarea>
+    </div>
+    <div class="zeile">
+      <label for="einst-start">Erster Spieltag (Samstag)</label>
+      <input type="date" id="einst-start" required>
+    </div>
+    <p class="fehler" id="einst-fehler" role="alert"></p>
+    <div class="dialog-knoepfe">
+      <button class="btn primaer" type="submit">Speichern</button>
+      <button class="btn sekundaer" type="button" data-schliessen>Abbrechen</button>
+    </div>
+  </form>
+  <form id="passwort-formular" method="dialog" class="dialog-form trenner">
+    <h3>Passwort ändern</h3>
+    <div class="raster-2">
+      <div class="zeile"><label for="pw-alt">Aktuelles Passwort</label><input type="password" id="pw-alt" autocomplete="current-password" required></div>
+      <div class="zeile"><label for="pw-neu">Neues Passwort (mind. 8 Zeichen)</label><input type="password" id="pw-neu" autocomplete="new-password" minlength="8" required></div>
+    </div>
+    <p class="fehler" id="pw-fehler" role="alert"></p>
+    <div class="dialog-knoepfe"><button class="btn sekundaer" type="submit">Passwort ändern</button></div>
+  </form>
+</dialog>
+
+<!-- Korrekturbuchung -->
+<dialog id="dialog-korrektur" aria-labelledby="korrektur-titel">
+  <form id="korrektur-formular" method="dialog" class="dialog-form">
+    <h2 id="korrektur-titel">Korrekturbuchung</h2>
+    <div class="raster-2">
+      <div class="zeile"><label for="k-datum">Datum</label><input type="date" id="k-datum" required></div>
+      <div class="zeile"><label for="k-notiz">Notiz</label><input type="text" id="k-notiz" maxlength="80" placeholder="z. B. Gutschrift Annahmestelle"></div>
+      <div class="zeile"><label for="k-lotto">6aus49 (€)</label><input type="number" id="k-lotto" step="0.01"></div>
+      <div class="zeile"><label for="k-spiel77">Spiel 77 (€)</label><input type="number" id="k-spiel77" step="0.01"></div>
+      <div class="zeile"><label for="k-super6">Super 6 (€)</label><input type="number" id="k-super6" step="0.01"></div>
+    </div>
+    <p class="fehler" id="k-fehler" role="alert"></p>
+    <div class="dialog-knoepfe">
+      <button class="btn primaer" type="submit">Buchen</button>
+      <button class="btn sekundaer" type="button" data-schliessen>Abbrechen</button>
+    </div>
+  </form>
+</dialog>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
