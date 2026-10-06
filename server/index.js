@@ -17,14 +17,18 @@ const PORT = Number(process.env.PORT) || 3000;
 const db = oeffneDatenbank(path.join(DATA_DIR, 'tipp.db'));
 const store = erstelleStore(db);
 
-// Erstes Passwort: aus INITIAL_PASSWORD, sonst zufällig und einmalig im Log. Danach zählt nur der Hash in der Datenbank.
-if (!store.passwortHash()) {
-  let passwort = process.env.INITIAL_PASSWORD;
+// Erste Passwörter: aus INITIAL_PASSWORD (Mitglieder) und ADMIN_PASSWORD (Admin), sonst zufällig und einmalig im Log.
+// Danach zählen nur die Hashwerte in der Datenbank, geändert wird in den Einstellungen oder per CLI.
+async function ersteinrichtung(name, umgebung, vorhanden, setze) {
+  if (vorhanden()) return;
+  let passwort = process.env[umgebung];
   const erzeugt = !passwort || passwort.length < 8;
   if (erzeugt) passwort = crypto.randomBytes(12).toString('base64url');
-  store.setzePasswortHash(await hashPassword(passwort));
-  if (erzeugt) console.log(`Erstes Passwort (bitte nach der Anmeldung ändern): ${passwort}`);
+  setze(await hashPassword(passwort));
+  if (erzeugt) console.log(`Erstes ${name}-Passwort (bitte nach der Anmeldung ändern): ${passwort}`);
 }
+await ersteinrichtung('Mitglieder', 'INITIAL_PASSWORD', () => store.passwortHash(), (h) => store.setzePasswortHash(h));
+await ersteinrichtung('Admin', 'ADMIN_PASSWORD', () => store.adminHash(), (h) => store.setzeAdminHash(h));
 
 const sync = erstelleSync({ store, quellen: erstelleQuellen() });
 const stoppeSync = sync.plane();

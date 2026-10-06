@@ -1,5 +1,7 @@
 // Browser-Test (Headless-Chromium) gegen eine laufende Instanz.
-// Aufruf: E2E_PASSWORD=... node scripts/e2e.mjs [url] [--schreiben] [--shots <ordner>]
+// Aufruf: E2E_PASSWORD=... E2E_ADMIN_PASSWORD=... node scripts/e2e.mjs [url] [--schreiben] [--shots <ordner>]
+//   E2E_PASSWORD         Passwort der Mitglieder, E2E_ADMIN_PASSWORD das des Admins. Es genügt eines von beiden,
+//                        Tests für die fehlende Rolle werden übersprungen.
 //   E2E_AUTH=benutzer:passwort   nur für Vorschauen mit HTTP-Basic-Auth in Coolify
 //   --schreiben                  erlaubt Änderungen (Korrekturbuchung anlegen und löschen, Einstellungen ändern und zurücksetzen);
 //                                nie gegen die echte Instanz verwenden. Ohne diese Option wird nur gelesen.
@@ -20,15 +22,17 @@ const args = process.argv.slice(2);
 const url = args.find((a) => /^https?:/.test(a)) ?? 'http://127.0.0.1:3000/';
 const schreiben = args.includes('--schreiben');
 const shots = args.includes('--shots') ? args[args.indexOf('--shots') + 1] : null;
-const passwort = process.env.E2E_PASSWORD;
-if (!passwort) throw new Error('E2E_PASSWORD fehlt.');
+const passwoerter = { mitglied: process.env.E2E_PASSWORD, admin: process.env.E2E_ADMIN_PASSWORD };
+if (!passwoerter.mitglied && !passwoerter.admin) throw new Error('E2E_PASSWORD oder E2E_ADMIN_PASSWORD fehlt.');
+const standard = passwoerter.mitglied ? 'mitglied' : 'admin'; // Rolle für alle Tests, die keine bestimmte brauchen
+const passwort = passwoerter[standard];
 const [authUser, authPass] = (process.env.E2E_AUTH ?? '').split(':');
 if (shots) mkdirSync(shots, { recursive: true });
 
 const browser = await chromium.launch({ channel: 'chromium' });
 const results = [];
 
-async function offen({ size = { width: 1280, height: 900 }, anmelden = true } = {}) {
+async function offen({ size = { width: 1280, height: 900 }, anmelden = true, rolle = standard } = {}) {
   const context = await browser.newContext({
     viewport: size,
     httpCredentials: authUser ? { username: authUser, password: authPass } : undefined,
@@ -40,7 +44,7 @@ async function offen({ size = { width: 1280, height: 900 }, anmelden = true } = 
   page.on('requestfailed', (r) => probleme.push(`[requestfailed] ${r.url()}`));
   await page.goto(url);
   if (anmelden) {
-    await page.fill('#passwort', passwort);
+    await page.fill('#passwort', passwoerter[rolle]);
     await page.click('#anmeldeformular button[type=submit]');
     await page.waitForSelector('#karten .karte');
   }
@@ -49,6 +53,10 @@ async function offen({ size = { width: 1280, height: 900 }, anmelden = true } = 
 
 async function test(name, fn, optionen = {}) {
   if (name.startsWith('Schreiben:') && !schreiben) return;
+  if (!passwoerter[optionen.rolle ?? standard]) {
+    results.push({ name, ok: true, uebersprungen: true, ms: 0 });
+    return;
+  }
   const t0 = Date.now();
   const s = await offen(optionen);
   try {
@@ -136,20 +144,42 @@ await test('Verlauf: Klick auf eine Zeile wählt die Ziehung, „Alle anzeigen�
   }
 });
 
-await test('Dialoge: Tippschein und Einstellungen zeigen die gespeicherten Daten und schließen mit Abbrechen', async ({ page }) => {
+await test('Dialog: Tippschein zeigt die gespeicherten Daten und schließt mit Abbrechen', async ({ page }) => {
   await page.click('#knopf-schein');
   assert.equal(await page.isVisible('#dialog-schein'), true);
   assert.equal(await page.locator('#schein-felder tr').count(), 8);
   assert.match(await page.inputValue('#schein-kosten'), /^\d/);
   await page.click('#dialog-schein [data-schliessen]');
   assert.equal(await page.isVisible('#dialog-schein'), false);
+});
 
+await test('Rollen: Mitglied sieht keine Einstellungen, der Server verweigert sie ebenfalls', async ({ page }) => {
+  assert.equal(await page.isVisible('#knopf-einstellungen'), false);
+  assert.equal(await page.isVisible('#admin-marke'), false);
+  const status = await page.evaluate(async () => {
+    const senden = (pfad, body) => fetch(pfad, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then((r) => r.status);
+    return {
+      einstellungen: await senden('/api/einstellungen', { spieler: ['A', 'B'], startDatum: '2026-01-03' }),
+      passwort: await senden('/api/passwort', { neu: 'ein-neues-passwort' }),
+      admin: await senden('/api/admin-passwort', { aktuell: 'x', neu: 'ein-neues-passwort' }),
+    };
+  });
+  assert.deepEqual(status, { einstellungen: 403, passwort: 403, admin: 403 });
+}, { rolle: 'mitglied', erwartet: /status of 403/ });
+
+await test('Rollen: Admin sieht Einstellungen mit Mitspielern, Startdatum und beiden Passwort-Formularen', async ({ page }) => {
+  assert.equal(await page.isVisible('#knopf-einstellungen'), true);
+  assert.equal(await page.isVisible('#admin-marke'), true);
   await page.click('#knopf-einstellungen');
   assert.ok((await page.inputValue('#einst-spieler')).split('\n').length >= 2);
   assert.match(await page.inputValue('#einst-start'), /^\d{4}-\d{2}-\d{2}$/);
+  assert.equal(await page.isVisible('#pw-neu'), true);
+  assert.equal(await page.isVisible('#adm-neu'), true);
+  await page.check('#pw-zeigen');
+  assert.equal(await page.getAttribute('#pw-neu', 'type'), 'text');
   await page.keyboard.press('Escape');
   assert.equal(await page.isVisible('#dialog-einstellungen'), false);
-});
+}, { rolle: 'admin' });
 
 await test('Abmelden führt zurück zur Anmeldung, die Schnittstelle ist danach gesperrt', async ({ page }) => {
   await page.click('#knopf-abmelden');
@@ -208,9 +238,28 @@ await test('Schreiben: Tippschein-Dialog meldet falsche Eingaben verständlich',
   assert.equal(await page.isVisible('#dialog-schein'), true, 'Dialog bleibt offen');
 }, { erwartet: /status of 400/ });
 
+await test('Schreiben: Admin ändert die Mitspieler und stellt sie wieder her', async ({ page }) => {
+  await page.click('#knopf-einstellungen');
+  const vorher = await page.inputValue('#einst-spieler');
+  await page.fill('#einst-spieler', 'E2E Eins\nE2E Zwei');
+  await page.click('#einstellungen-formular button[type=submit]');
+  await page.waitForFunction(() => document.getElementById('spieler-tabelle').textContent.includes('E2E Eins'));
+  await page.click('#knopf-einstellungen');
+  await page.fill('#einst-spieler', vorher);
+  await page.click('#einstellungen-formular button[type=submit]');
+  await page.waitForFunction(() => !document.getElementById('spieler-tabelle').textContent.includes('E2E Eins'));
+  await page.click('#knopf-einstellungen');
+  assert.equal(await page.inputValue('#einst-spieler'), vorher);
+}, { rolle: 'admin' });
+
 await browser.close();
 
-for (const r of results) console.log(`${r.ok ? '✔' : '✖'} ${r.name} (${r.ms} ms)${r.ok ? '' : `\n    ${r.fehler.replace(/\n/g, '\n    ')}`}`);
+for (const r of results) {
+  if (r.uebersprungen) console.log(`- ${r.name} (übersprungen, kein Passwort für diese Rolle)`);
+  else console.log(`${r.ok ? '✔' : '✖'} ${r.name} (${r.ms} ms)${r.ok ? '' : `\n    ${r.fehler.replace(/\n/g, '\n    ')}`}`);
+}
 const bad = results.filter((r) => !r.ok).length;
-console.log(`\n${results.length - bad} von ${results.length} Browser-Tests bestanden${schreiben ? '' : ' (nur lesend, --schreiben für alle)'}`);
+const uebersprungen = results.filter((r) => r.uebersprungen).length;
+console.log(`\n${results.length - bad - uebersprungen} von ${results.length - uebersprungen} Browser-Tests bestanden`
+  + `${uebersprungen ? `, ${uebersprungen} übersprungen` : ''}${schreiben ? '' : ' (nur lesend, --schreiben für alle)'}`);
 process.exit(bad ? 1 : 0);

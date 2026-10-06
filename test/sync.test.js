@@ -195,3 +195,60 @@ test('Sicherung: eine Datei je Tag, die letzten 7 bleiben, Inhalt lässt sich le
   sichere(db, path.join(ordner, 'backups'), '2026-10-10');
   assert.ok(readdirSync(path.join(ordner, 'backups')).includes('fremd.txt'), 'fremde Dateien werden nicht gelöscht');
 });
+
+test('Wochenende: Zahlen am Samstagabend, Quoten erscheinen Montagmorgen und werden von selbst übernommen', async () => {
+  const SA = Date.parse('2026-10-10T18:40:00Z'); // 20:40 Berlin
+  const MO = Date.parse('2026-10-12T05:00:00Z'); // 07:00 Berlin
+  let jetzt = SA;
+  const ohneQuoten = ziehung('2026-10-10', { quoten: null });
+  const store = await neuerStore();
+  store.speichereEinstellungen({ spieler: ['A', 'B'], startDatum: '2026-10-10' });
+  const quellen = stubQuellen({ ziehungen: [ohneQuoten], hessen: ohneQuoten });
+  const sync = erstelleSync({ store, quellen, jetzt: () => jetzt, log: stilleLogs, pause: 0 });
+
+  // Samstagabend: erster Lauf holt die Zahlen, Lotto Hessen bestätigt sie
+  assert.equal(sync.sollLaufen(), true);
+  await sync.starte();
+  assert.equal(store.ziehung('2026-10-10').quoten, null);
+  assert.equal(store.ziehung('2026-10-10').geprueft, 'lotto-hessen');
+
+  // Bis zum Montag fragt der Zeitplan alle 15 Minuten nach, auch obwohl die Zahlen schon bestätigt sind
+  let laeufe = 0;
+  for (jetzt = SA + 5 * 60 * 1000; jetzt < MO; jetzt += 5 * 60 * 1000) {
+    if (sync.sollLaufen()) {
+      laeufe += 1;
+      await sync.starte();
+    }
+  }
+  assert.ok(laeufe >= 100 && laeufe <= 140, `Zahl der Läufe bis Montag: ${laeufe}`);
+  assert.equal(store.ziehung('2026-10-10').quoten, null);
+
+  // Montagmorgen: lotto.de hat die Quoten veröffentlicht. Der nächste planmäßige Lauf übernimmt sie
+  quellen.setzeZiehungen([ziehung('2026-10-10')]);
+  jetzt = MO;
+  let versuche = 0;
+  while (!store.ziehung('2026-10-10').quoten && versuche < 6) {
+    jetzt += 5 * 60 * 1000;
+    versuche += 1;
+    if (sync.sollLaufen()) await sync.starte();
+  }
+  assert.deepEqual(store.ziehung('2026-10-10').quoten, QUOTEN);
+  assert.ok(versuche <= 4, `Quoten nach ${versuche * 5} Minuten übernommen`);
+  assert.equal(store.ziehung('2026-10-10').geprueft, 'lotto-hessen', 'die Gegenprüfung bleibt erhalten');
+
+  // Danach ist Ruhe, bis die nächste Ziehung ansteht
+  jetzt += 20 * 60 * 1000;
+  assert.equal(sync.sollLaufen(), false);
+});
+
+test('Nach der Mittwochsziehung wird die fertige Samstagsziehung nicht ständig neu abgefragt', async () => {
+  let jetzt = Date.parse('2026-10-07T20:00:00Z'); // Mittwochabend
+  const store = await neuerStore();
+  store.speichereEinstellungen({ spieler: ['A', 'B'], startDatum: '2026-10-03' });
+  // Samstag fertig, aber nie von Lotto Hessen bestätigt (die kennen nur die Mittwochszahlen)
+  store.speichereZiehung(ziehung('2026-10-03'), jetzt - 4 * 86400000);
+  store.setzeMeta('sync_versuch', jetzt - 20 * 60 * 1000);
+  store.setzeMeta('sync_erfolg', jetzt - 20 * 60 * 1000);
+  const sync = erstelleSync({ store, quellen: stubQuellen(), jetzt: () => jetzt, log: stilleLogs, pause: 0 });
+  assert.equal(sync.sollLaufen(), false);
+});

@@ -81,10 +81,21 @@ $('knopf-abmelden').addEventListener('click', async () => {
 
 // ---- Laden und Abrufen ----
 
+let letzteAktualisierung = 0;
+
 async function lade() {
   z = await api('GET', '/api/zustand');
+  letzteAktualisierung = Date.now();
   render();
 }
+
+// Offene Seite von selbst auffrischen, damit neue Quoten ohne Neuladen erscheinen (nicht bei offenem Dialog oder im Hintergrund-Tab)
+setInterval(() => {
+  if (z && !document.hidden && !document.querySelector('dialog[open]') && Date.now() - letzteAktualisierung > 5 * 60 * 1000) lade().catch(() => {});
+}, 60 * 1000);
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && z && Date.now() - letzteAktualisierung > 2 * 60 * 1000) lade().catch(() => {});
+});
 
 async function starteAbruf(still = false) {
   try {
@@ -116,6 +127,10 @@ $('knopf-abruf').addEventListener('click', () => starteAbruf(false));
 
 function render() {
   if (!z) return;
+  // Einstellungen und Passwörter ändert nur der Admin, der Server prüft das ebenfalls
+  const admin = z.rolle === 'admin';
+  $('knopf-einstellungen').hidden = !admin;
+  $('admin-marke').hidden = !admin;
   renderStatus();
   renderKarten();
   renderAbgleich();
@@ -492,8 +507,10 @@ $('knopf-einstellungen').addEventListener('click', () => {
   $('einst-start').value = z.einstellungen.startDatum;
   $('einst-fehler').textContent = '';
   $('pw-fehler').textContent = '';
-  $('pw-alt').value = '';
-  $('pw-neu').value = '';
+  $('adm-fehler').textContent = '';
+  ['pw-neu', 'adm-alt', 'adm-neu'].forEach((id) => { $(id).value = ''; });
+  $('pw-zeigen').checked = false;
+  $('pw-neu').type = 'password';
   oeffneDialog($('dialog-einstellungen'));
 });
 
@@ -518,12 +535,28 @@ $('passwort-formular').addEventListener('submit', async (e) => {
   e.preventDefault();
   $('pw-fehler').textContent = '';
   try {
-    await api('PUT', '/api/passwort', { aktuell: $('pw-alt').value, neu: $('pw-neu').value });
-    $('pw-alt').value = '';
+    await api('PUT', '/api/passwort', { neu: $('pw-neu').value });
     $('pw-neu').value = '';
-    toast('Passwort geändert. Andere Geräte müssen sich neu anmelden.');
+    $('pw-zeigen').checked = false;
+    $('pw-neu').type = 'password';
+    toast('Passwort der Mitglieder geändert. Mitglieder müssen sich neu anmelden.');
   } catch (err) {
     $('pw-fehler').textContent = err.message;
+  }
+});
+
+$('pw-zeigen').addEventListener('change', (e) => { $('pw-neu').type = e.target.checked ? 'text' : 'password'; });
+
+$('admin-formular').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  $('adm-fehler').textContent = '';
+  try {
+    await api('PUT', '/api/admin-passwort', { aktuell: $('adm-alt').value, neu: $('adm-neu').value });
+    $('adm-alt').value = '';
+    $('adm-neu').value = '';
+    toast('Admin-Passwort geändert.');
+  } catch (err) {
+    $('adm-fehler').textContent = err.message;
   }
 });
 

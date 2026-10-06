@@ -131,14 +131,14 @@ export function erstelleApp({ store, sync, jetzt = () => Date.now(), sicheresCoo
     const token = lesenCookie(req);
     if (!token) return null;
     const hash = sha256(token);
-    const laeuftAb = store.sitzung(hash);
-    if (!laeuftAb || laeuftAb < jetzt()) return null;
+    const sitzung = store.sitzung(hash);
+    if (!sitzung || sitzung.laeuftAb < jetzt()) return null;
     // Gleitende Laufzeit: wer die App nutzt, bleibt angemeldet
-    if (laeuftAb - jetzt() < (SITZUNG_TAGE / 2) * 86400000) {
+    if (sitzung.laeuftAb - jetzt() < (SITZUNG_TAGE / 2) * 86400000) {
       store.verlaengereSitzung(hash, jetzt() + SITZUNG_TAGE * 86400000);
       setzeCookie(res, token, SITZUNG_TAGE * 86400);
     }
-    return hash;
+    return { hash, rolle: sitzung.rolle };
   }
 
   // Bremse gegen Passwort-Raten: Hash der IP mit zufälligem Salz, nur im Arbeitsspeicher
@@ -162,22 +162,31 @@ export function erstelleApp({ store, sync, jetzt = () => Date.now(), sicheresCoo
   const aufraeumen = setInterval(() => store.raeumeSitzungenAuf(jetzt()), 12 * 3600000);
   aufraeumen.unref();
 
-  app.get('/api/sitzung', (req, res) => res.json({ angemeldet: Boolean(aktuelleSitzung(req, res)) }));
+  app.get('/api/sitzung', (req, res) => {
+    const sitzung = aktuelleSitzung(req, res);
+    res.json({ angemeldet: Boolean(sitzung), rolle: sitzung?.rolle ?? null });
+  });
 
   app.post('/api/anmelden', async (req, res) => {
     const key = schluessel(req);
     const minuten = gesperrtFuer(key);
     if (minuten) return res.status(429).json({ error: `Zu viele Versuche. Bitte in ${minuten} Minute${minuten === 1 ? '' : 'n'} erneut versuchen.` });
     const passwort = typeof req.body?.passwort === 'string' ? req.body.passwort : '';
-    if (!passwort || passwort.length > 200 || !(await verifyPassword(passwort, store.passwortHash()))) {
+    // Ein Eingabefeld für beide: das Admin-Passwort öffnet die Admin-Ansicht, das der Mitglieder die normale
+    let rolle = null;
+    if (passwort && passwort.length <= 200) {
+      if (await verifyPassword(passwort, store.adminHash())) rolle = 'admin';
+      else if (await verifyPassword(passwort, store.passwortHash())) rolle = 'mitglied';
+    }
+    if (!rolle) {
       merkeFehlversuch(key);
       return res.status(401).json({ error: 'Falsches Passwort.' });
     }
     fehlversuche.delete(key);
     const token = crypto.randomBytes(32).toString('base64url');
-    store.legeSitzungAn(sha256(token), jetzt() + SITZUNG_TAGE * 86400000);
+    store.legeSitzungAn(sha256(token), jetzt() + SITZUNG_TAGE * 86400000, rolle);
     setzeCookie(res, token, SITZUNG_TAGE * 86400);
-    res.json({ ok: true });
+    res.json({ ok: true, rolle });
   });
 
   app.use('/api', (req, res, next) => {
@@ -188,14 +197,19 @@ export function erstelleApp({ store, sync, jetzt = () => Date.now(), sicheresCoo
   });
 
   app.post('/api/abmelden', (req, res) => {
-    store.beendeSitzung(req.sitzung);
+    store.beendeSitzung(req.sitzung.hash);
     setzeCookie(res, '', 0);
     res.json({ ok: true });
   });
 
   // ---- Daten ----
 
-  function zustand() {
+  const nurAdmin = (req, res, next) => {
+    if (req.sitzung.rolle !== 'admin') return res.status(403).json({ error: 'Nur für den Admin.' });
+    next();
+  };
+
+  function zustand(rolle) {
     const { spieler, startDatum } = store.einstellungen();
     const heute = berlinHeute(jetzt());
     const korrekturen = store.korrekturen();
@@ -203,6 +217,7 @@ export function erstelleApp({ store, sync, jetzt = () => Date.now(), sicheresCoo
       ziehungen: store.ziehungen(), scheine: store.scheine(), startDatum, heute, korrekturen, spieler,
     });
     return {
+      rolle,
       heute,
       naechsterSpieltag: naechsterSpieltag(jetzt()),
       einstellungen: { spieler, startDatum },
@@ -213,14 +228,14 @@ export function erstelleApp({ store, sync, jetzt = () => Date.now(), sicheresCoo
     };
   }
 
-  app.get('/api/zustand', (req, res) => res.json(zustand()));
+  app.get('/api/zustand', (req, res) => res.json(zustand(req.sitzung.rolle)));
 
-  app.put('/api/einstellungen', (req, res) => {
+  app.put('/api/einstellungen', nurAdmin, (req, res) => {
     const neu = pruefeEinstellungen(req.body);
     const alt = store.einstellungen();
     store.speichereEinstellungen(neu);
     if (neu.startDatum < alt.startDatum) sync.starte('startdatum');
-    res.json(zustand());
+    res.json(zustand(req.sitzung.rolle));
   });
 
   function pruefeEindeutig(s, ausserId = null) {
@@ -233,7 +248,7 @@ export function erstelleApp({ store, sync, jetzt = () => Date.now(), sicheresCoo
     const s = pruefeSchein(req.body);
     pruefeEindeutig(s);
     store.legeScheinAn(s);
-    res.json(zustand());
+    res.json(zustand(req.sitzung.rolle));
   });
 
   app.put('/api/scheine/:id', (req, res) => {
@@ -242,24 +257,24 @@ export function erstelleApp({ store, sync, jetzt = () => Date.now(), sicheresCoo
     const s = pruefeSchein(req.body);
     pruefeEindeutig(s, id);
     store.aktualisiereSchein(id, s);
-    res.json(zustand());
+    res.json(zustand(req.sitzung.rolle));
   });
 
   app.delete('/api/scheine/:id', (req, res) => {
     const id = Number(req.params.id);
     if (!store.schein(id)) return res.status(404).json({ error: 'Schein nicht gefunden.' });
     store.loescheSchein(id);
-    res.json(zustand());
+    res.json(zustand(req.sitzung.rolle));
   });
 
   app.post('/api/korrekturen', (req, res) => {
     store.legeKorrekturAn(pruefeKorrektur(req.body));
-    res.json(zustand());
+    res.json(zustand(req.sitzung.rolle));
   });
 
   app.delete('/api/korrekturen/:id', (req, res) => {
     if (!store.loescheKorrektur(Number(req.params.id))) return res.status(404).json({ error: 'Buchung nicht gefunden.' });
-    res.json(zustand());
+    res.json(zustand(req.sitzung.rolle));
   });
 
   app.post('/api/abruf', (req, res) => {
@@ -269,14 +284,25 @@ export function erstelleApp({ store, sync, jetzt = () => Date.now(), sicheresCoo
     res.json({ gestartet: !status.laeuft && !kuerzlich, sync: sync.status() });
   });
 
-  app.put('/api/passwort', async (req, res) => {
+  // Der Admin setzt das Passwort der Mitglieder neu, ohne das alte zu kennen. Mitglieder werden dabei abgemeldet.
+  app.put('/api/passwort', nurAdmin, async (req, res) => {
+    const neu = req.body?.neu;
+    if (typeof neu !== 'string' || neu.length < 8 || neu.length > 200) ungueltig('Das neue Passwort braucht mindestens 8 Zeichen.');
+    if (await verifyPassword(neu, store.adminHash())) ungueltig('Das Passwort der Mitglieder muss sich vom Admin-Passwort unterscheiden.');
+    store.setzePasswortHash(await hashPassword(neu));
+    store.beendeSitzungen('mitglied');
+    res.json({ ok: true });
+  });
+
+  app.put('/api/admin-passwort', nurAdmin, async (req, res) => {
     const { aktuell, neu } = req.body ?? {};
-    if (typeof aktuell !== 'string' || !(await verifyPassword(aktuell, store.passwortHash()))) {
-      return res.status(401).json({ error: 'Das aktuelle Passwort stimmt nicht.' });
+    if (typeof aktuell !== 'string' || !(await verifyPassword(aktuell, store.adminHash()))) {
+      return res.status(401).json({ error: 'Das aktuelle Admin-Passwort stimmt nicht.' });
     }
     if (typeof neu !== 'string' || neu.length < 8 || neu.length > 200) ungueltig('Das neue Passwort braucht mindestens 8 Zeichen.');
-    store.setzePasswortHash(await hashPassword(neu));
-    store.beendeAlleSitzungen(req.sitzung);
+    if (await verifyPassword(neu, store.passwortHash())) ungueltig('Das Admin-Passwort muss sich vom Passwort der Mitglieder unterscheiden.');
+    store.setzeAdminHash(await hashPassword(neu));
+    store.beendeSitzungen('admin', req.sitzung.hash);
     res.json({ ok: true });
   });
 

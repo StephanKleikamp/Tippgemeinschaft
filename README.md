@@ -37,11 +37,16 @@ Korrekturbuchungen. Gewinne, Kosten und Bilanz berechnet `server/rules.js` bei j
 | Adresse | https://lotto.stephan-kleikamp.de |
 | Dienst | Node 24, Express 5, SQLite (`node:sqlite`), keine weiteren Abhängigkeiten, kein Build-Schritt |
 | Daten | Volume auf `/data`: `tipp.db`, tägliche Sicherungen in `/data/backups` (7 Tage, ab 3 Uhr) |
-| Variablen | `INITIAL_PASSWORD`: Passwort beim ersten Start (danach zählt nur der Hash in der Datenbank, änderbar in den Einstellungen) |
-| Zeitplan | Abruf nach dem Ziehungsabend alle 15 Minuten bis alle Quoten da sind, sonst einmal am Tag. „Jetzt prüfen“ löst ihn von Hand aus (30 Sekunden Pause) |
-| Verwaltung | im Container: `node server/cli.js passwort <neues>` und `node server/cli.js status` |
+| Variablen | `INITIAL_PASSWORD` (Mitglieder) und `ADMIN_PASSWORD` (Admin): Passwörter beim ersten Start. Danach zählen nur die Hashwerte in der Datenbank, geändert wird in den Einstellungen oder per CLI |
+| Zeitplan | Ab Samstag 19:45 Uhr fragt der Server alle 15 bis 20 Minuten nach, bis alle Quoten der Ziehung da sind (laut Stichprobe Montagmorgen), danach nur noch einmal am Tag. „Jetzt prüfen“ löst einen Abruf von Hand aus (30 Sekunden Pause). Eine offene Seite frischt sich alle 5 Minuten selbst auf |
+| Verwaltung | im Container: `node server/cli.js passwort <neues>` (Mitglieder), `admin-passwort <neues>` und `status` |
 
-- Anmeldung mit einem gemeinsamen Passwort (scrypt-Hash). Das Sitzungscookie `tipp_session` ist HttpOnly, SameSite=Lax,
+- **Zwei Rollen, ein Eingabefeld:** Das Passwort der Mitglieder zeigt die App ohne „Einstellungen“. Mit dem Admin-Passwort
+  erscheint zusätzlich „Einstellungen“ (Mitspieler, Startdatum, Passwort der Mitglieder, Admin-Passwort). Der Server
+  prüft die Rolle bei jeder Änderung selbst (`403` für Mitglieder), das Ausblenden im Browser ist nur Bedienkomfort.
+  Mitglieder dürfen weiter Tippschein und Korrekturbuchungen bearbeiten. Setzt der Admin das Mitglieder-Passwort neu,
+  werden die Mitglieder abgemeldet. Beide Passwörter müssen sich unterscheiden.
+- Anmeldung mit gemeinsamem Passwort je Rolle (scrypt-Hash). Das Sitzungscookie `tipp_session` ist HttpOnly, SameSite=Lax,
   Secure und 30 Tage gültig. Nach 8 Fehlversuchen gilt 10 Minuten Sperre (nur ein Hash der IP-Adresse im Arbeitsspeicher).
 - Kein Zugriffsprotokoll, keine externen Schriften oder Skripte, `noindex`. Strenge CSP, Schreibzugriffe nur von der
   eigenen Adresse.
@@ -65,8 +70,8 @@ Der Server fragt nur Gewinnzahlen ab. Es werden keine Angaben der Tippgemeinscha
 ```bash
 npm install
 INITIAL_PASSWORD=geheim-1234 DATA_DIR=.data PORT=3000 COOKIE_INSECURE=1 npm start
-npm test                                    # 53 Tests: Regeln, Quellen, Abruf, Sicherung, Schnittstelle
-E2E_PASSWORD=geheim-1234 npm run e2e -- http://127.0.0.1:3000/ [--schreiben]   # Browser-Tests (Playwright)
+npm test                                    # 59 Tests: Regeln, Quellen, Abruf, Sicherung, Rollen, Schnittstelle
+E2E_PASSWORD=geheim-1234 E2E_ADMIN_PASSWORD=... npm run e2e -- http://127.0.0.1:3000/ [--schreiben]   # Browser-Tests (Playwright)
 ```
 
 Die E2E-Tests mit `--schreiben` legen Buchungen an und löschen sie wieder. Gegen die echte Instanz nur ohne diese Option

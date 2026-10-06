@@ -17,6 +17,8 @@ export function stubQuellen({ ziehungen = [], hessen = null, archiv = [], lottoD
   const aufrufe = { tage: 0, ziehungen: [], hessen: 0, archiv: 0 };
   return {
     aufrufe,
+    /** Ersetzt die Antworten von lotto.de, etwa wenn die Quoten später erscheinen. */
+    setzeZiehungen(neue) { ziehungen = neue; },
     async lottoDeTage() {
       aufrufe.tage += 1;
       if (lottoDeAus) throw new Error('lotto.de: HTTP 503');
@@ -41,9 +43,10 @@ export function stubQuellen({ ziehungen = [], hessen = null, archiv = [], lottoD
   };
 }
 
-export async function neuerStore({ passwort = 'geheim-1234' } = {}) {
+export async function neuerStore({ passwort = 'geheim-1234', adminPasswort = 'admin-test-5678' } = {}) {
   const store = erstelleStore(oeffneDatenbank(':memory:'));
   store.setzePasswortHash(await hashPassword(passwort));
+  store.setzeAdminHash(await hashPassword(adminPasswort));
   return store;
 }
 

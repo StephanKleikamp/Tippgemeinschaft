@@ -7,7 +7,7 @@
  *  2. Die neueste Ziehung mit Lotto Hessen gegenprüfen (zweite, unabhängige Quelle).
  *  3. Fällt lotto.de aus: letzte Ziehung von Lotto Hessen, ältere Zahlen aus dem Archiv (dann ohne Quoten, also vorläufig).
  *
- * Den Zeitplan (`sollLaufen`) übernimmt ein Zeitgeber alle 10 Minuten: nach dem Ziehungsabend wird alle 15 Minuten
+ * Den Zeitplan (`sollLaufen`) übernimmt ein Zeitgeber, der alle 5 Minuten schaut: nach dem Ziehungsabend wird alle 15 Minuten
  * gefragt, bis die Quoten da sind (laut Stichprobe erst am Montagmorgen), sonst einmal am Tag.
  */
 import { SERIE, addDays, isoWeekday, letzterSamstag } from './rules.js';
@@ -181,7 +181,8 @@ export function erstelleSync({ store, quellen, jetzt = () => Date.now(), log = c
     const erwartet = erwarteteZiehung(jetztMs);
     if (erwartet >= startDatum) {
       const letzte = store.ziehungen().filter((z) => z.serie === SERIE && z.date >= addDays(erwartet, -3)).pop();
-      const veraltet = !letzte || !letzte.quoten || !letzte.geprueft;
+      // Maßgeblich sind nur die Quoten: Lotto Hessen kennt nur die letzte Ziehung und kann ältere nicht mehr gegenprüfen
+      const veraltet = !letzte || !letzte.quoten;
       const frisch = berlinHeute(jetztMs) <= addDays(erwartet, 6);
       if (veraltet && jetztMs - versuch > (frisch ? 15 * MIN : 6 * 60 * MIN)) return true;
     }
@@ -203,7 +204,7 @@ export function erstelleSync({ store, quellen, jetzt = () => Date.now(), log = c
   function plane() {
     const tick = () => { if (sollLaufen()) starte('zeit'); };
     const erster = setTimeout(tick, 3000);
-    const intervall = setInterval(tick, 10 * MIN);
+    const intervall = setInterval(tick, 5 * MIN);
     erster.unref();
     intervall.unref();
     return () => { clearTimeout(erster); clearInterval(intervall); };

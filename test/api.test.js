@@ -34,12 +34,13 @@ async function starteServer({ quellen = stubQuellen(), sicheresCookie = false } 
     };
     return { get: (p, k) => anfrage('GET', p, undefined, k), post: (p, b, k) => anfrage('POST', p, b ?? {}, k), put: (p, b, k) => anfrage('PUT', p, b, k), del: (p) => anfrage('DELETE', p), cookie: () => cookie };
   };
-  const angemeldet = async () => {
+  const angemeldet = async (passwort = 'geheim-1234') => {
     const c = client();
-    assert.equal((await c.post('/api/anmelden', { passwort: 'geheim-1234' })).status, 200);
+    assert.equal((await c.post('/api/anmelden', { passwort })).status, 200);
     return c;
   };
-  return { store, sync, basis, client, angemeldet, schliessen: () => new Promise((r) => server.close(r)) };
+  const alsAdmin = () => angemeldet('admin-test-5678');
+  return { store, sync, basis, client, angemeldet, alsAdmin, schliessen: () => new Promise((r) => server.close(r)) };
 }
 
 test('Ohne Anmeldung ist die Schnittstelle gesperrt, die Seite und der Healthcheck sind offen', async () => {
@@ -91,7 +92,7 @@ test('Bremse: nach 8 Fehlversuchen ist die Anmeldung gesperrt, auch mit richtige
 
 test('Schreibzugriffe von fremden Seiten werden abgelehnt', async () => {
   const s = await starteServer();
-  const c = await s.angemeldet();
+  const c = await s.alsAdmin();
   const fremd = await c.put('/api/einstellungen', { spieler: ['A', 'B'], startDatum: '2026-01-03' }, { 'Sec-Fetch-Site': 'cross-site' });
   assert.equal(fremd.status, 403);
   const fremdeHerkunft = await c.put('/api/einstellungen', { spieler: ['A', 'B'], startDatum: '2026-01-03' }, { Origin: 'https://boese.example' });
@@ -103,7 +104,7 @@ test('Schreibzugriffe von fremden Seiten werden abgelehnt', async () => {
 
 test('Einstellungen werden geprüft und gespeichert', async () => {
   const s = await starteServer();
-  const c = await s.angemeldet();
+  const c = await s.alsAdmin();
   assert.equal((await c.put('/api/einstellungen', { spieler: ['Nur einer'], startDatum: '2026-01-03' })).status, 400);
   assert.equal((await c.put('/api/einstellungen', { spieler: ['A', ''], startDatum: '2026-01-03' })).status, 400);
   assert.equal((await c.put('/api/einstellungen', { spieler: ['A', 'B'], startDatum: '2026-02-30' })).status, 400);
@@ -220,17 +221,64 @@ test('Korrekturbuchungen zählen zum Gewinn, auch negative', async () => {
   await s.schliessen();
 });
 
-test('Passwort ändern: altes muss stimmen, andere Anmeldungen enden, neues gilt', async () => {
+test('Rollen: ein Eingabefeld, das Passwort entscheidet, ob Mitglied oder Admin', async () => {
   const s = await starteServer();
-  const c1 = await s.angemeldet();
-  const c2 = await s.angemeldet();
-  assert.equal((await c1.put('/api/passwort', { aktuell: 'falsch', neu: 'neues-passwort' })).status, 401);
-  assert.equal((await c1.put('/api/passwort', { aktuell: 'geheim-1234', neu: 'kurz' })).status, 400);
-  assert.equal((await c1.put('/api/passwort', { aktuell: 'geheim-1234', neu: 'neues-passwort' })).status, 200);
-  assert.equal((await c1.get('/api/zustand')).status, 200, 'die eigene Sitzung bleibt');
-  assert.equal((await c2.get('/api/zustand')).status, 401, 'andere Sitzungen enden');
-  assert.equal((await s.client().post('/api/anmelden', { passwort: 'geheim-1234' })).status, 401);
-  assert.equal((await s.client().post('/api/anmelden', { passwort: 'neues-passwort' })).status, 200);
+  const m = await s.angemeldet();
+  const a = await s.alsAdmin();
+  assert.equal((await m.get('/api/sitzung')).json.rolle, 'mitglied');
+  assert.equal((await a.get('/api/sitzung')).json.rolle, 'admin');
+  assert.equal((await m.get('/api/zustand')).json.rolle, 'mitglied');
+  assert.equal((await a.get('/api/zustand')).json.rolle, 'admin');
+  assert.equal((await s.client().get('/api/sitzung')).json.rolle, null);
+  await s.schliessen();
+});
+
+test('Mitglieder dürfen weder Einstellungen noch Passwörter ändern, aber Schein und Buchungen weiter bearbeiten', async () => {
+  const s = await starteServer();
+  const m = await s.angemeldet();
+  const vorher = (await m.get('/api/zustand')).json.einstellungen;
+  const neu = { spieler: ['X', 'Y'], startDatum: '2026-02-07' };
+  assert.equal((await m.put('/api/einstellungen', neu)).status, 403);
+  assert.equal((await m.put('/api/passwort', { neu: 'neues-passwort' })).status, 403);
+  assert.equal((await m.put('/api/admin-passwort', { aktuell: 'admin-test-5678', neu: 'noch-ein-neues' })).status, 403);
+  assert.deepEqual((await m.get('/api/zustand')).json.einstellungen, vorher, 'nichts wurde geändert');
+  assert.equal((await s.client().post('/api/anmelden', { passwort: 'geheim-1234' })).status, 200, 'Mitglieder-Passwort gilt weiter');
+  assert.equal((await m.post('/api/scheine', { ...SCHEIN_BODY, gueltigAb: '2026-09-26' })).status, 200);
+  assert.equal((await m.post('/api/korrekturen', { datum: '2026-10-03', lotto: 1 })).status, 200);
+  await s.schliessen();
+});
+
+test('Admin setzt das Passwort der Mitglieder neu: alte Mitglieder-Anmeldungen enden, der Admin bleibt angemeldet', async () => {
+  const s = await starteServer();
+  const m = await s.angemeldet();
+  const a = await s.alsAdmin();
+  assert.equal((await a.put('/api/passwort', { neu: 'kurz' })).status, 400);
+  const gleich = await a.put('/api/passwort', { neu: 'admin-test-5678' });
+  assert.equal(gleich.status, 400);
+  assert.match(gleich.json.error, /unterscheiden/);
+  assert.equal((await a.put('/api/passwort', { neu: 'neues-passwort' })).status, 200);
+  assert.equal((await a.get('/api/zustand')).status, 200, 'der Admin bleibt angemeldet');
+  assert.equal((await m.get('/api/zustand')).status, 401, 'Mitglieder müssen sich neu anmelden');
+  assert.equal((await s.client().post('/api/anmelden', { passwort: 'geheim-1234' })).status, 401, 'altes Passwort gilt nicht mehr');
+  const neu = s.client();
+  assert.equal((await neu.post('/api/anmelden', { passwort: 'neues-passwort' })).json.rolle, 'mitglied');
+  await s.schliessen();
+});
+
+test('Admin-Passwort ändern: altes muss stimmen, muss sich vom Mitglieder-Passwort unterscheiden, andere Admin-Anmeldungen enden', async () => {
+  const s = await starteServer();
+  const a1 = await s.alsAdmin();
+  const a2 = await s.alsAdmin();
+  const m = await s.angemeldet();
+  assert.equal((await a1.put('/api/admin-passwort', { aktuell: 'falsch', neu: 'neues-admin-pw' })).status, 401);
+  assert.equal((await a1.put('/api/admin-passwort', { aktuell: 'admin-test-5678', neu: 'kurz' })).status, 400);
+  assert.equal((await a1.put('/api/admin-passwort', { aktuell: 'admin-test-5678', neu: 'geheim-1234' })).status, 400);
+  assert.equal((await a1.put('/api/admin-passwort', { aktuell: 'admin-test-5678', neu: 'neues-admin-pw' })).status, 200);
+  assert.equal((await a1.get('/api/zustand')).status, 200, 'die eigene Sitzung bleibt');
+  assert.equal((await a2.get('/api/zustand')).status, 401, 'andere Admin-Sitzungen enden');
+  assert.equal((await m.get('/api/zustand')).status, 200, 'Mitglieder sind nicht betroffen');
+  assert.equal((await s.client().post('/api/anmelden', { passwort: 'admin-test-5678' })).status, 401);
+  assert.equal((await s.client().post('/api/anmelden', { passwort: 'neues-admin-pw' })).json.rolle, 'admin');
   await s.schliessen();
 });
 
@@ -243,4 +291,30 @@ test('Unbekannte Adressen und kaputte Eingaben', async () => {
   });
   assert.equal(kaputt.status, 400);
   await s.schliessen();
+});
+
+test('Datenbank aus der Zeit vor den Rollen wird nachgerüstet, Passwort und Sitzungen bleiben, Sitzungen werden Mitglieder', async () => {
+  const { DatabaseSync } = await import('node:sqlite');
+  const { mkdtempSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  const { oeffneDatenbank, erstelleStore, hashPassword } = await import('../server/db.js');
+  const datei = path.join(mkdtempSync(path.join(tmpdir(), 'tipp-migration-')), 'tipp.db');
+  const alt = new DatabaseSync(datei);
+  alt.exec(`
+    CREATE TABLE einstellungen (id INTEGER PRIMARY KEY CHECK (id = 1), spieler TEXT NOT NULL, start_datum TEXT NOT NULL, passwort_hash TEXT);
+    CREATE TABLE sitzungen (token_hash TEXT PRIMARY KEY, laeuft_ab INTEGER NOT NULL);
+  `);
+  const hash = await hashPassword('altes-mitglieder-pw');
+  alt.prepare('INSERT INTO einstellungen (id, spieler, start_datum, passwort_hash) VALUES (1, ?, ?, ?)').run('["Anna","Bernd"]', '2026-01-03', hash);
+  alt.prepare('INSERT INTO sitzungen (token_hash, laeuft_ab) VALUES (?, ?)').run('abc', 9999999999999);
+  alt.close();
+
+  const store = erstelleStore(oeffneDatenbank(datei));
+  assert.equal(store.passwortHash(), hash, 'das bisherige Passwort bleibt erhalten');
+  assert.equal(store.adminHash(), null);
+  assert.deepEqual(store.sitzung('abc'), { laeuftAb: 9999999999999, rolle: 'mitglied' });
+  assert.deepEqual(store.einstellungen().spieler, ['Anna', 'Bernd']);
+  // zweites Öffnen ändert nichts mehr
+  const wieder = erstelleStore(oeffneDatenbank(datei));
+  assert.equal(wieder.passwortHash(), hash);
 });

@@ -91,6 +91,7 @@ a { color: var(--primaer-dunkel); }
 .abschnitt-kopf { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
 .abschnitt-kopf h2 { font-size: 1.05rem; }
 .abschnitt-kopf .btn { margin-left: 6px; }
+.badge.admin { background: #b9770e; margin-left: 8px; vertical-align: middle; font-size: 0.68rem; }
 .badge { background: var(--schiefer); color: #fff; padding: 3px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 600; }
 .hinweis { font-size: 0.82rem; color: var(--gedaempft); margin-bottom: 10px; }
 .tabelle-rahmen { border-radius: 14px; overflow-x: auto; box-shadow: var(--schatten); background: var(--karte); }

@@ -26,13 +26,13 @@
 <div id="app" hidden>
   <header class="kopf">
     <div class="marke">
-      <h1>🍀 Tippgemeinschaft</h1>
+      <h1>🍀 Tippgemeinschaft <span id="admin-marke" class="badge admin" hidden>Admin</span></h1>
       <p>Lotto 6aus49 · Spiel 77 · Super 6</p>
     </div>
     <div class="kopf-knoepfe">
       <button class="btn hell klein" id="knopf-abruf" type="button">🔄 Jetzt prüfen</button>
       <button class="btn hell klein" id="knopf-schein" type="button">🎟️ Tippschein</button>
-      <button class="btn hell klein" id="knopf-einstellungen" type="button">⚙️ Einstellungen</button>
+      <button class="btn hell klein" id="knopf-einstellungen" type="button" hidden>⚙️ Einstellungen</button>
       <button class="btn hell klein" id="knopf-abmelden" type="button">Abmelden</button>
     </div>
   </header>
@@ -128,13 +128,24 @@
     </div>
   </form>
   <form id="passwort-formular" method="dialog" class="dialog-form trenner">
-    <h3>Passwort ändern</h3>
-    <div class="raster-2">
-      <div class="zeile"><label for="pw-alt">Aktuelles Passwort</label><input type="password" id="pw-alt" autocomplete="current-password" required></div>
-      <div class="zeile"><label for="pw-neu">Neues Passwort (mind. 8 Zeichen)</label><input type="password" id="pw-neu" autocomplete="new-password" minlength="8" required></div>
+    <h3>Passwort der Mitglieder</h3>
+    <p class="hinweis">Gilt für alle Mitglieder. Wer gerade angemeldet ist, muss sich danach neu anmelden.</p>
+    <div class="zeile">
+      <label for="pw-neu">Neues Passwort (mindestens 8 Zeichen)</label>
+      <input type="password" id="pw-neu" autocomplete="new-password" minlength="8" required>
     </div>
+    <div class="haken"><label><input type="checkbox" id="pw-zeigen"> Passwort anzeigen</label></div>
     <p class="fehler" id="pw-fehler" role="alert"></p>
-    <div class="dialog-knoepfe"><button class="btn sekundaer" type="submit">Passwort ändern</button></div>
+    <div class="dialog-knoepfe"><button class="btn sekundaer" type="submit">Passwort setzen</button></div>
+  </form>
+  <form id="admin-formular" method="dialog" class="dialog-form trenner">
+    <h3>Admin-Passwort ändern</h3>
+    <div class="raster-2">
+      <div class="zeile"><label for="adm-alt">Aktuelles Admin-Passwort</label><input type="password" id="adm-alt" autocomplete="current-password" required></div>
+      <div class="zeile"><label for="adm-neu">Neues Admin-Passwort (mind. 8 Zeichen)</label><input type="password" id="adm-neu" autocomplete="new-password" minlength="8" required></div>
+    </div>
+    <p class="fehler" id="adm-fehler" role="alert"></p>
+    <div class="dialog-knoepfe"><button class="btn sekundaer" type="submit">Admin-Passwort ändern</button></div>
   </form>
 </dialog>
 

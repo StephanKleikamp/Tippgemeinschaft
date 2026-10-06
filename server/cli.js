@@ -1,6 +1,7 @@
 /**
  * Verwaltung im Container (Coolify: Terminal der App):
- *   node server/cli.js passwort <neues-passwort>   setzt ein neues Passwort und beendet alle Anmeldungen
+ *   node server/cli.js passwort <neues-passwort>         neues Passwort der Mitglieder, beendet deren Anmeldungen
+ *   node server/cli.js admin-passwort <neues-passwort>   neues Admin-Passwort, beendet alle Admin-Anmeldungen
  *   node server/cli.js status                      zeigt Scheine, Ziehungen und den letzten Abruf
  */
 import path from 'node:path';
@@ -9,14 +10,17 @@ import { oeffneDatenbank, erstelleStore, hashPassword } from './db.js';
 const store = erstelleStore(oeffneDatenbank(path.join(process.env.DATA_DIR || '/data', 'tipp.db')));
 const [befehl, argument] = process.argv.slice(2);
 
-if (befehl === 'passwort') {
+if (befehl === 'passwort' || befehl === 'admin-passwort') {
   if (!argument || argument.length < 8) {
-    console.error('Aufruf: node server/cli.js passwort <neues-passwort mit mindestens 8 Zeichen>');
+    console.error(`Aufruf: node server/cli.js ${befehl} <neues-passwort mit mindestens 8 Zeichen>`);
     process.exit(1);
   }
-  store.setzePasswortHash(await hashPassword(argument));
-  store.beendeAlleSitzungen();
-  console.log('Passwort geändert, alle Anmeldungen beendet.');
+  const admin = befehl === 'admin-passwort';
+  const hash = await hashPassword(argument);
+  if (admin) store.setzeAdminHash(hash);
+  else store.setzePasswortHash(hash);
+  store.beendeSitzungen(admin ? 'admin' : 'mitglied');
+  console.log(`${admin ? 'Admin-Passwort' : 'Passwort der Mitglieder'} geändert, die zugehörigen Anmeldungen sind beendet.`);
 } else if (befehl === 'status') {
   const ziehungen = store.ziehungen().filter((z) => z.serie === 'Samstag');
   const zeit = (ms) => (ms ? new Date(Number(ms)).toISOString() : '-');
@@ -24,6 +28,6 @@ if (befehl === 'passwort') {
   console.log(`Scheine: ${store.scheine().length}, Samstagsziehungen: ${ziehungen.length} (davon endgültig: ${ziehungen.filter((z) => z.quoten).length})`);
   console.log(`Letzter Abruf: ${zeit(store.meta('sync_versuch'))}, letzter Erfolg: ${zeit(store.meta('sync_erfolg'))}, Fehler: ${store.meta('sync_fehler') || '-'}`);
 } else {
-  console.error('Befehle: passwort <neues-passwort> | status');
+  console.error('Befehle: passwort <neues-passwort> | admin-passwort <neues-passwort> | status');
   process.exit(1);
 }
