@@ -244,14 +244,14 @@ export function erstelleApp({ store, sync, jetzt = () => Date.now(), sicheresCoo
     }
   }
 
-  app.post('/api/scheine', (req, res) => {
+  app.post('/api/scheine', nurAdmin, (req, res) => {
     const s = pruefeSchein(req.body);
     pruefeEindeutig(s);
     store.legeScheinAn(s);
     res.json(zustand(req.sitzung.rolle));
   });
 
-  app.put('/api/scheine/:id', (req, res) => {
+  app.put('/api/scheine/:id', nurAdmin, (req, res) => {
     const id = Number(req.params.id);
     if (!store.schein(id)) return res.status(404).json({ error: 'Schein nicht gefunden.' });
     const s = pruefeSchein(req.body);
@@ -260,19 +260,19 @@ export function erstelleApp({ store, sync, jetzt = () => Date.now(), sicheresCoo
     res.json(zustand(req.sitzung.rolle));
   });
 
-  app.delete('/api/scheine/:id', (req, res) => {
+  app.delete('/api/scheine/:id', nurAdmin, (req, res) => {
     const id = Number(req.params.id);
     if (!store.schein(id)) return res.status(404).json({ error: 'Schein nicht gefunden.' });
     store.loescheSchein(id);
     res.json(zustand(req.sitzung.rolle));
   });
 
-  app.post('/api/korrekturen', (req, res) => {
+  app.post('/api/korrekturen', nurAdmin, (req, res) => {
     store.legeKorrekturAn(pruefeKorrektur(req.body));
     res.json(zustand(req.sitzung.rolle));
   });
 
-  app.delete('/api/korrekturen/:id', (req, res) => {
+  app.delete('/api/korrekturen/:id', nurAdmin, (req, res) => {
     if (!store.loescheKorrektur(Number(req.params.id))) return res.status(404).json({ error: 'Buchung nicht gefunden.' });
     res.json(zustand(req.sitzung.rolle));
   });

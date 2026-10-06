@@ -116,7 +116,7 @@ test('Einstellungen werden geprüft und gespeichert', async () => {
 
 test('Schein: Prüfungen mit verständlichen Meldungen', async () => {
   const s = await starteServer();
-  const c = await s.angemeldet();
+  const c = await s.alsAdmin();
   const fehler = async (aenderung, muster) => {
     const r = await c.post('/api/scheine', { ...SCHEIN_BODY, ...aenderung });
     assert.equal(r.status, 400, JSON.stringify(aenderung));
@@ -139,7 +139,7 @@ test('Schein: Prüfungen mit verständlichen Meldungen', async () => {
 
 test('Schein anlegen, bearbeiten, löschen; Datum nur einmal', async () => {
   const s = await starteServer();
-  const c = await s.angemeldet();
+  const c = await s.alsAdmin();
   const angelegt = await c.post('/api/scheine', { ...SCHEIN_BODY, gueltigAb: '2026-09-26', losnummer: '123 4560' });
   assert.equal(angelegt.status, 200);
   const schein = angelegt.json.scheine[0];
@@ -167,7 +167,7 @@ test('Abruf und Abrechnung: Ziehungen holen, Gewinne und Bilanz berechnen', asyn
     ziehung('2026-10-03', { nums: [40, 41, 42, 43, 44, 45] }),
   ];
   const s = await starteServer({ quellen: stubQuellen({ ziehungen: zs, hessen: zs[1] }) });
-  const c = await s.angemeldet();
+  const c = await s.alsAdmin();
   await c.post('/api/scheine', { ...SCHEIN_BODY, gueltigAb: '2026-09-26' });
 
   const start = await c.post('/api/abruf');
@@ -204,7 +204,7 @@ test('Abruf: innerhalb von 30 Sekunden wird nicht erneut gestartet', async () =>
 
 test('Korrekturbuchungen zählen zum Gewinn, auch negative', async () => {
   const s = await starteServer();
-  const c = await s.angemeldet();
+  const c = await s.alsAdmin();
   await c.post('/api/scheine', { ...SCHEIN_BODY, gueltigAb: '2026-09-26' });
   assert.equal((await c.post('/api/korrekturen', { datum: '2026-10-03', lotto: 0, spiel77: 0, super6: 0 })).status, 400);
   assert.equal((await c.post('/api/korrekturen', { datum: 'x', lotto: 5 })).status, 400);
@@ -233,18 +233,41 @@ test('Rollen: ein Eingabefeld, das Passwort entscheidet, ob Mitglied oder Admin'
   await s.schliessen();
 });
 
-test('Mitglieder dürfen weder Einstellungen noch Passwörter ändern, aber Schein und Buchungen weiter bearbeiten', async () => {
-  const s = await starteServer();
+test('Mitglieder dürfen nichts ändern (Einstellungen, Passwörter, Tippschein, Buchungen), aber ansehen und „Jetzt prüfen“ nutzen', async () => {
+  const s = await starteServer({ quellen: stubQuellen({ ziehungen: [ziehung('2026-10-03')] }) });
+  const a = await s.alsAdmin();
+  const angelegt = await a.post('/api/scheine', { ...SCHEIN_BODY, gueltigAb: '2026-09-26' });
+  const scheinId = angelegt.json.scheine[0].id;
+  const buchung = await a.post('/api/korrekturen', { datum: '2026-10-03', lotto: 5, notiz: 'vom Admin' });
+  const buchungId = buchung.json.korrekturen[0].id;
+
   const m = await s.angemeldet();
-  const vorher = (await m.get('/api/zustand')).json.einstellungen;
+  const vorher = (await m.get('/api/zustand')).json;
   const neu = { spieler: ['X', 'Y'], startDatum: '2026-02-07' };
-  assert.equal((await m.put('/api/einstellungen', neu)).status, 403);
-  assert.equal((await m.put('/api/passwort', { neu: 'neues-passwort' })).status, 403);
-  assert.equal((await m.put('/api/admin-passwort', { aktuell: 'admin-test-5678', neu: 'noch-ein-neues' })).status, 403);
-  assert.deepEqual((await m.get('/api/zustand')).json.einstellungen, vorher, 'nichts wurde geändert');
+  const verweigert = [
+    await m.put('/api/einstellungen', neu),
+    await m.put('/api/passwort', { neu: 'neues-passwort' }),
+    await m.put('/api/admin-passwort', { aktuell: 'admin-test-5678', neu: 'noch-ein-neues' }),
+    await m.post('/api/scheine', { ...SCHEIN_BODY, gueltigAb: '2026-10-10' }),
+    await m.put(`/api/scheine/${scheinId}`, { ...SCHEIN_BODY, gueltigAb: '2026-09-26', kosten: 99 }),
+    await m.del(`/api/scheine/${scheinId}`),
+    await m.post('/api/korrekturen', { datum: '2026-10-03', lotto: 1 }),
+    await m.del(`/api/korrekturen/${buchungId}`),
+  ];
+  assert.deepEqual(verweigert.map((r) => r.status), Array(8).fill(403));
+  assert.ok(verweigert.every((r) => r.json.error === 'Nur für den Admin.'));
+
+  const nachher = (await m.get('/api/zustand')).json;
+  assert.deepEqual(nachher.einstellungen, vorher.einstellungen);
+  assert.deepEqual(nachher.scheine, vorher.scheine, 'der Schein ist unverändert');
+  assert.deepEqual(nachher.korrekturen, vorher.korrekturen, 'die Buchung ist unverändert');
+  assert.equal(nachher.scheine.length, 1);
+  assert.equal(nachher.korrekturen.length, 1);
+
+  // Ansehen und Abruf bleiben für Mitglieder möglich
+  assert.equal(nachher.abrechnung.zeilen.length >= 1, true);
+  assert.equal((await m.post('/api/abruf')).status, 200);
   assert.equal((await s.client().post('/api/anmelden', { passwort: 'geheim-1234' })).status, 200, 'Mitglieder-Passwort gilt weiter');
-  assert.equal((await m.post('/api/scheine', { ...SCHEIN_BODY, gueltigAb: '2026-09-26' })).status, 200);
-  assert.equal((await m.post('/api/korrekturen', { datum: '2026-10-03', lotto: 1 })).status, 200);
   await s.schliessen();
 });
 

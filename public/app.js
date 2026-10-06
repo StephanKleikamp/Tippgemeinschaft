@@ -127,10 +127,15 @@ $('knopf-abruf').addEventListener('click', () => starteAbruf(false));
 
 function render() {
   if (!z) return;
-  // Einstellungen und Passwörter ändert nur der Admin, der Server prüft das ebenfalls
+  // Einstellungen, Passwörter, Tippschein und Korrekturbuchungen ändert nur der Admin, der Server prüft das ebenfalls
   const admin = z.rolle === 'admin';
   $('knopf-einstellungen').hidden = !admin;
+  $('knopf-schein').hidden = !admin;
+  $('knopf-korrektur').hidden = !admin;
   $('admin-marke').hidden = !admin;
+  $('korrektur-hinweis').textContent = admin
+    ? 'Gewinne aus den Ziehungen werden automatisch berechnet. Hier nur eintragen, was davon abweicht, zum Beispiel eine Gutschrift der Annahmestelle (Minus für Abzüge).'
+    : 'Gewinne aus den Ziehungen werden automatisch berechnet. Hier steht nur, was davon abweicht, zum Beispiel eine Gutschrift der Annahmestelle.';
   renderStatus();
   renderKarten();
   renderAbgleich();
@@ -234,7 +239,9 @@ function renderAbgleich() {
   const ziel = $('abgleich');
   const zeilen = z.abrechnung.zeilen;
   if (!z.scheine.length) {
-    ziel.innerHTML = `<div class="abgleich"><div class="abgleich-leer"><h2>Noch kein Tippschein</h2><p>Trage eure 8 Spielfelder und die Scheinnummer ein. Dann wird jede Ziehung automatisch abgeglichen.</p><button class="btn primaer" type="button" data-aktion="schein">🎟️ Tippschein eintragen</button></div></div>`;
+    ziel.innerHTML = z.rolle === 'admin'
+      ? `<div class="abgleich"><div class="abgleich-leer"><h2>Noch kein Tippschein</h2><p>Trage eure 8 Spielfelder und die Scheinnummer ein. Dann wird jede Ziehung automatisch abgeglichen.</p><button class="btn primaer" type="button" data-aktion="schein">🎟️ Tippschein eintragen</button></div></div>`
+      : `<div class="abgleich"><div class="abgleich-leer"><h2>Noch kein Tippschein</h2><p>Der Admin trägt die Spielfelder und die Scheinnummer ein. Danach wird jede Ziehung automatisch abgeglichen.</p></div></div>`;
     return;
   }
   if (!zeilen.length) {
@@ -380,17 +387,18 @@ $('verlauf-tabelle').addEventListener('keydown', (e) => {
 });
 
 function renderKorrekturen() {
-  const kopf = '<thead><tr><th>Datum</th><th class="zahl">6aus49</th><th class="zahl">Spiel 77</th><th class="zahl">Super 6</th><th>Notiz</th><th></th></tr></thead>';
+  const admin = z.rolle === 'admin';
+  const kopf = `<thead><tr><th>Datum</th><th class="zahl">6aus49</th><th class="zahl">Spiel 77</th><th class="zahl">Super 6</th><th>Notiz</th>${admin ? '<th></th>' : ''}</tr></thead>`;
   const k = z.korrekturen;
   if (!k.length) {
-    $('korrektur-tabelle').innerHTML = `${kopf}<tbody><tr><td class="leer" colspan="6">Keine Korrekturen.</td></tr></tbody>`;
+    $('korrektur-tabelle').innerHTML = `${kopf}<tbody><tr><td class="leer" colspan="${admin ? 6 : 5}">Keine Korrekturen.</td></tr></tbody>`;
     return;
   }
   const betrag = (n) => (n ? `<span class="${n > 0 ? 'gruen' : 'rot'}">${fe(n)}</span>` : '<span class="grau">–</span>');
   $('korrektur-tabelle').innerHTML = `${kopf}<tbody>${k.map((x) => `<tr>
     <td class="nowrap">${datumKurz(x.datum)}</td><td class="zahl">${betrag(x.lotto)}</td><td class="zahl">${betrag(x.spiel77)}</td><td class="zahl">${betrag(x.super6)}</td>
     <td class="grau">${esc(x.notiz)}</td>
-    <td class="zahl"><button class="btn symbol" type="button" data-loeschen="${x.id}" aria-label="Buchung löschen">✕</button></td></tr>`).join('')}</tbody>`;
+    ${admin ? `<td class="zahl"><button class="btn symbol" type="button" data-loeschen="${x.id}" aria-label="Buchung löschen">✕</button></td>` : ''}</tr>`).join('')}</tbody>`;
 }
 
 $('korrektur-tabelle').addEventListener('click', async (e) => {

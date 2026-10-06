@@ -31,7 +31,7 @@
     </div>
     <div class="kopf-knoepfe">
       <button class="btn hell klein" id="knopf-abruf" type="button">🔄 Jetzt prüfen</button>
-      <button class="btn hell klein" id="knopf-schein" type="button">🎟️ Tippschein</button>
+      <button class="btn hell klein" id="knopf-schein" type="button" hidden>🎟️ Tippschein</button>
       <button class="btn hell klein" id="knopf-einstellungen" type="button" hidden>⚙️ Einstellungen</button>
       <button class="btn hell klein" id="knopf-abmelden" type="button">Abmelden</button>
     </div>
@@ -55,9 +55,9 @@
     <section>
       <div class="abschnitt-kopf">
         <h2>Korrekturbuchungen</h2>
-        <button class="btn sekundaer klein" id="knopf-korrektur" type="button">+ Buchung</button>
+        <button class="btn sekundaer klein" id="knopf-korrektur" type="button" hidden>+ Buchung</button>
       </div>
-      <p class="hinweis">Gewinne aus den Ziehungen werden automatisch berechnet. Hier nur eintragen, was davon abweicht, zum Beispiel eine Gutschrift der Annahmestelle (Minus für Abzüge).</p>
+      <p class="hinweis" id="korrektur-hinweis">Gewinne aus den Ziehungen werden automatisch berechnet. Hier steht nur, was davon abweicht, zum Beispiel eine Gutschrift der Annahmestelle.</p>
       <div class="tabelle-rahmen"><table id="korrektur-tabelle"></table></div>
     </section>
   </main>

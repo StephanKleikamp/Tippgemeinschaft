@@ -151,25 +151,33 @@ await test('Dialog: Tippschein zeigt die gespeicherten Daten und schließt mit A
   assert.match(await page.inputValue('#schein-kosten'), /^\d/);
   await page.click('#dialog-schein [data-schliessen]');
   assert.equal(await page.isVisible('#dialog-schein'), false);
-});
+}, { rolle: 'admin' });
 
-await test('Rollen: Mitglied sieht keine Einstellungen, der Server verweigert sie ebenfalls', async ({ page }) => {
-  assert.equal(await page.isVisible('#knopf-einstellungen'), false);
-  assert.equal(await page.isVisible('#admin-marke'), false);
+await test('Rollen: Mitglied kann nichts ändern, sieht aber alles, und der Server verweigert Änderungen ebenfalls', async ({ page }) => {
+  for (const knopf of ['#knopf-einstellungen', '#knopf-schein', '#knopf-korrektur', '#admin-marke']) {
+    assert.equal(await page.isVisible(knopf), false, `${knopf} ist für Mitglieder sichtbar`);
+  }
+  assert.equal(await page.locator('[data-loeschen]').count(), 0, 'keine Löschknöpfe bei den Buchungen');
+  assert.equal(await page.isVisible('#knopf-abruf'), true, '„Jetzt prüfen“ bleibt');
+  assert.ok(await page.locator('#abgleich .abgleich').count(), 'Abgleich bleibt sichtbar');
   const status = await page.evaluate(async () => {
-    const senden = (pfad, body) => fetch(pfad, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then((r) => r.status);
+    const senden = (pfad, body, methode = 'PUT') => fetch(pfad, { method: methode, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then((r) => r.status);
     return {
       einstellungen: await senden('/api/einstellungen', { spieler: ['A', 'B'], startDatum: '2026-01-03' }),
       passwort: await senden('/api/passwort', { neu: 'ein-neues-passwort' }),
       admin: await senden('/api/admin-passwort', { aktuell: 'x', neu: 'ein-neues-passwort' }),
+      schein: await senden('/api/scheine', { gueltigAb: '2099-01-01' }, 'POST'),
+      buchung: await senden('/api/korrekturen', { datum: '2026-01-03', lotto: 1 }, 'POST'),
+      loeschen: await fetch('/api/korrekturen/1', { method: 'DELETE' }).then((r) => r.status),
     };
   });
-  assert.deepEqual(status, { einstellungen: 403, passwort: 403, admin: 403 });
+  assert.deepEqual(status, { einstellungen: 403, passwort: 403, admin: 403, schein: 403, buchung: 403, loeschen: 403 });
 }, { rolle: 'mitglied', erwartet: /status of 403/ });
 
 await test('Rollen: Admin sieht Einstellungen mit Mitspielern, Startdatum und beiden Passwort-Formularen', async ({ page }) => {
-  assert.equal(await page.isVisible('#knopf-einstellungen'), true);
-  assert.equal(await page.isVisible('#admin-marke'), true);
+  for (const knopf of ['#knopf-einstellungen', '#knopf-schein', '#knopf-korrektur', '#admin-marke']) {
+    assert.equal(await page.isVisible(knopf), true, `${knopf} fehlt beim Admin`);
+  }
   await page.click('#knopf-einstellungen');
   assert.ok((await page.inputValue('#einst-spieler')).split('\n').length >= 2);
   assert.match(await page.inputValue('#einst-start'), /^\d{4}-\d{2}-\d{2}$/);
@@ -223,7 +231,7 @@ await test('Schreiben: Korrekturbuchung anlegen, in den Summen sehen, wieder lö
   await page.click('#korrektur-tabelle tr:has-text("E2E-Test") [data-loeschen]');
   await page.waitForFunction(() => !document.getElementById('korrektur-tabelle').textContent.includes('E2E-Test'));
   assert.equal(await text(page, '#karten .karte:nth-child(2) .karte-wert'), vorher);
-});
+}, { rolle: 'admin' });
 
 await test('Schreiben: Tippschein-Dialog meldet falsche Eingaben verständlich', async ({ page }) => {
   await page.click('#knopf-schein');
@@ -236,7 +244,7 @@ await test('Schreiben: Tippschein-Dialog meldet falsche Eingaben verständlich',
   await page.click('#schein-speichern');
   await page.waitForFunction(() => /doppelt/.test(document.getElementById('schein-fehler').textContent));
   assert.equal(await page.isVisible('#dialog-schein'), true, 'Dialog bleibt offen');
-}, { erwartet: /status of 400/ });
+}, { rolle: 'admin', erwartet: /status of 400/ });
 
 await test('Schreiben: Admin ändert die Mitspieler und stellt sie wieder her', async ({ page }) => {
   await page.click('#knopf-einstellungen');

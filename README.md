@@ -41,11 +41,11 @@ Korrekturbuchungen. Gewinne, Kosten und Bilanz berechnet `server/rules.js` bei j
 | Zeitplan | Ab Samstag 19:45 Uhr fragt der Server alle 15 bis 20 Minuten nach, bis alle Quoten der Ziehung da sind (laut Stichprobe Montagmorgen), danach nur noch einmal am Tag. „Jetzt prüfen“ löst einen Abruf von Hand aus (30 Sekunden Pause). Eine offene Seite frischt sich alle 5 Minuten selbst auf |
 | Verwaltung | im Container: `node server/cli.js passwort <neues>` (Mitglieder), `admin-passwort <neues>` und `status` |
 
-- **Zwei Rollen, ein Eingabefeld:** Das Passwort der Mitglieder zeigt die App ohne „Einstellungen“. Mit dem Admin-Passwort
-  erscheint zusätzlich „Einstellungen“ (Mitspieler, Startdatum, Passwort der Mitglieder, Admin-Passwort). Der Server
-  prüft die Rolle bei jeder Änderung selbst (`403` für Mitglieder), das Ausblenden im Browser ist nur Bedienkomfort.
-  Mitglieder dürfen weiter Tippschein und Korrekturbuchungen bearbeiten. Setzt der Admin das Mitglieder-Passwort neu,
-  werden die Mitglieder abgemeldet. Beide Passwörter müssen sich unterscheiden.
+- **Zwei Rollen, ein Eingabefeld:** Mitglieder sehen alles (Abgleich, Verlauf, Buchungen, Tippschein) und können „Jetzt prüfen“
+  auslösen, ändern aber nichts. Mit dem Admin-Passwort erscheinen zusätzlich „Einstellungen“ (Mitspieler, Startdatum,
+  Passwort der Mitglieder, Admin-Passwort), „Tippschein“ und „+ Buchung“ samt Löschen. Der Server prüft die Rolle bei jeder
+  Änderung selbst (`403` für Mitglieder), das Ausblenden im Browser ist nur Bedienkomfort. Setzt der Admin das
+  Mitglieder-Passwort neu, werden die Mitglieder abgemeldet. Beide Passwörter müssen sich unterscheiden.
 - Anmeldung mit gemeinsamem Passwort je Rolle (scrypt-Hash). Das Sitzungscookie `tipp_session` ist HttpOnly, SameSite=Lax,
   Secure und 30 Tage gültig. Nach 8 Fehlversuchen gilt 10 Minuten Sperre (nur ein Hash der IP-Adresse im Arbeitsspeicher).
 - Kein Zugriffsprotokoll, keine externen Schriften oder Skripte, `noindex`. Strenge CSP, Schreibzugriffe nur von der
