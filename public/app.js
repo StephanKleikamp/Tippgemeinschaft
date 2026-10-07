@@ -140,6 +140,7 @@ function wendeSpielAn(sp) {
   // Scheinnummer, Spiel 77 und Super 6 gibt es nur bei 6aus49
   for (const id of ['schein-losnummer-zeile', 'schein-haken', 'schein-zusatz-hinweis', 'k-spiel77-zeile', 'k-super6-zeile']) $(id).hidden = !sp.zusatz;
   $('k-lotto-label').textContent = `${sp.spalten[0].label} (€)`;
+  $('zahlung-formular').hidden = !sp.zahlungen || z?.rolle !== 'admin';
   const { zahlen, max, extra } = sp.feld;
   $('schein-kopf-zahlen').textContent = `${zahlen} Zahlen (1–${max}), mit Leerzeichen getrennt`;
   $('schein-kopf-extra').textContent = extra.art === 'euro' ? `Eurozahlen (${extra.min}–${extra.max})` : 'SZ';
@@ -160,6 +161,7 @@ function render() {
   renderStatus();
   renderKarten();
   renderAbgleich();
+  renderZahlungen();
   renderSpieler();
   renderVerlauf();
   renderKorrekturen();
@@ -352,6 +354,171 @@ $('abgleich').addEventListener('change', (e) => {
   }
 });
 
+// -- Zahlungen des ersten Mitspielers (nur Eurojackpot) --
+
+const kwText = (kw) => `KW ${kw}`;
+const bezahltMarke = (datum) => (z.zahlungen?.zahlungen.length && z.zahlungen.ziehungen.find((x) => x.datum === datum)?.bezahlt
+  ? ' <span class="marke-status ok">💶 bezahlt</span>' : '');
+
+function zahlungenTabelle(zahlungen, { loeschen = false } = {}) {
+  if (!zahlungen.zahlungen.length) return '<tbody><tr><td class="leer" colspan="5">Noch keine Zahlung erfasst.</td></tr></tbody>';
+  const zeilen = [...zahlungen.zahlungen].reverse().map((x) => `<tr>
+    <td class="nowrap">${datumKurz(x.eingegangenAm)}</td>
+    <td class="nowrap">${kwText(x.kw)} · ${datumKurz(x.bezahltBis)}</td>
+    <td class="zahl"><strong>${fe(x.betrag)}</strong></td>
+    <td class="grau">${esc(x.notiz)}</td>
+    ${loeschen ? `<td class="zahl"><button class="btn symbol" type="button" data-zahlung-loeschen="${x.id}" aria-label="Zahlung löschen">✕</button></td>` : ''}</tr>`).join('');
+  return `<thead><tr><th>Eingegangen</th><th>Bezahlt bis</th><th class="zahl">Betrag</th><th>Notiz</th>${loeschen ? '<th></th>' : ''}</tr></thead><tbody>${zeilen}</tbody>`;
+}
+
+function renderZahlungen() {
+  const ziel = $('zahlungen');
+  const zl = z.zahlungen;
+  const admin = z.rolle === 'admin';
+  // Mitglieder sehen den Abschnitt erst, wenn die erste Zahlung dokumentiert ist, damit niemand einen unvollständigen Stand sieht
+  if (!zl || (!zl.zahlungen.length && !admin)) {
+    ziel.hidden = true;
+    return;
+  }
+  ziel.hidden = false;
+  const name = esc(zl.zahler);
+  const letzte = zl.zahlungen[zl.zahlungen.length - 1];
+  const bezahltKarte = zl.zahlungen.length
+    ? `<div class="karte"><div class="karte-label">Bereits bezahlt</div><div class="karte-wert gruen">${fe(zl.bezahlt)}</div><div class="karte-unter">${zl.zahlungen.length} ${plural(zl.zahlungen.length, 'Zahlung', 'Zahlungen')}, zuletzt eingegangen am ${datumKurz(letzte.eingegangenAm)}</div></div>`
+    : '<div class="karte"><div class="karte-label">Bereits bezahlt</div><div class="karte-wert grau">0,00 €</div><div class="karte-unter">noch keine Zahlung erfasst</div></div>';
+  const zeitraumKarte = zl.abgedeckt
+    ? `<div class="karte"><div class="karte-label">Bezahlt für</div><div class="karte-wert">${kwText(zl.abgedeckt.kwVon)} bis ${kwText(zl.abgedeckt.kwBis)}</div><div class="karte-unter">${datumKurz(zl.abgedeckt.von)} bis ${datumKurz(zl.abgedeckt.bis)} · ${zl.abgedeckt.ziehungen} ${plural(zl.abgedeckt.ziehungen, 'Ziehung', 'Ziehungen')}</div></div>`
+    : '<div class="karte"><div class="karte-label">Bezahlt für</div><div class="karte-wert grau">–</div><div class="karte-unter">noch kein Zeitraum bezahlt</div></div>';
+
+  const offen = zl.offenBetrag;
+  let offenKarte;
+  if (!zl.stand) {
+    offenKarte = '<div class="karte"><div class="karte-label">Noch zu zahlen</div><div class="karte-wert grau">–</div><div class="karte-unter">noch keine Ziehung mit endgültigen Quoten</div></div>';
+  } else if (Math.abs(offen) < 0.005 && !zl.offen) {
+    offenKarte = `<div class="karte"><div class="karte-label">Noch zu zahlen</div><div class="karte-wert gruen">${fe(0)}</div><div class="karte-unter">✓ alles bezahlt bis zur letzten Ziehung (${datumKurz(zl.stand)}, ${kwText(zl.standKw)})</div></div>`;
+  } else {
+    const bereich = zl.offen
+      ? `${kwText(zl.offen.kwVon)} bis ${kwText(zl.offen.kwBis)} · ${datumKurz(zl.offen.von)} bis ${datumKurz(zl.offen.bis)} · ${zl.offen.ziehungen} ${plural(zl.offen.ziehungen, 'Ziehung', 'Ziehungen')}`
+      : `bis zur letzten Ziehung (${datumKurz(zl.stand)}, ${kwText(zl.standKw)})`;
+    const titel = offen < 0 ? 'Guthaben' : 'Noch zu zahlen';
+    offenKarte = `<div class="karte"><div class="karte-label">${titel}</div><div class="karte-wert ${offen < 0 ? 'gruen' : 'rot'}">${fe(Math.abs(offen))}</div><div class="karte-unter">${bereich}</div></div>`;
+  }
+
+  const hinweise = [];
+  if (zl.ausstehend.length) {
+    const d = zl.ausstehend[0];
+    hinweise.push(`Die Ziehung vom ${datumKurz(d.datum)} (${kwText(d.kw)}) hat noch keine Quoten. Der Betrag wird danach angepasst.`);
+  }
+  if (Math.abs(zl.abweichung) >= 0.005) {
+    hinweise.push(`Für den bezahlten Zeitraum ${zl.abweichung > 0 ? 'wurden' : 'fehlen'} ${fe(Math.abs(zl.abweichung))} ${zl.abweichung > 0 ? 'mehr gezahlt als berechnet' : 'gegenüber der Berechnung'}. Das ist im offenen Betrag schon berücksichtigt.`);
+  }
+  if (!zl.zahlungen.length && admin) hinweise.push(`Noch keine Zahlung erfasst. Unter „Einstellungen“ → „Zahlungen“ trägst du ein, bis wann ${zl.zahler} bezahlt hat. Mitglieder sehen diesen Abschnitt erst danach.`);
+
+  ziel.innerHTML = `
+    <div class="abschnitt-kopf"><h2>Zahlungen von ${name}</h2><span class="klein-grau">Anteil an Kosten minus Gewinnen, je Ziehung geteilt durch ${z.einstellungen.spieler.length}</span></div>
+    <div class="karten">${bezahltKarte}${zeitraumKarte}${offenKarte}</div>
+    ${hinweise.map((h) => `<p class="hinweis zahl-hinweis">${esc(h)}</p>`).join('')}
+    ${zl.zahlungen.length ? `<div class="tabelle-rahmen"><table>${zahlungenTabelle(zl)}</table></div>` : ''}`;
+}
+
+// Admin: Zahlung erfassen (Ziehungen abhaken oder „bezahlt bis zum“ eingeben)
+
+let betragManuell = false;
+
+function zahlungenFormular() {
+  const zl = z.zahlungen;
+  const form = $('zahlung-formular');
+  form.hidden = !z.spiel.zahlungen || z.rolle !== 'admin';
+  if (form.hidden || !zl) return;
+  $('zahl-titel').textContent = `Zahlungen von ${zl.zahler}`;
+  const offen = zl.ziehungen.filter((x) => !x.bezahlt);
+  $('zahl-stand').textContent = zl.bezahltBis
+    ? `Bezahlt bis ${datumLang(zl.bezahltBis)} (${kwText(zl.bezahltBisKw)}), insgesamt ${fe(zl.bezahlt)}. Noch zu zahlen: ${fe(zl.offenBetrag)}.`
+    : `Noch keine Zahlung erfasst. Rechnerisch fällig bis zur letzten Ziehung: ${fe(zl.offenBetrag)}.`;
+  $('zahl-liste').innerHTML = offen.length
+    ? offen.map((x) => `<label class="zahl-zeile"><input type="checkbox" data-datum="${x.datum}"><span>${datumLang(x.datum)}</span><span class="grau">${kwText(x.kw)}</span><span class="betrag ${x.anteil < 0 ? 'gruen' : ''}">${fe(x.anteil)}</span></label>`).join('')
+    : '<div class="zahl-leer">Alle Ziehungen mit endgültigen Quoten sind bezahlt.</div>';
+  $('zahl-bis').value = '';
+  $('zahl-betrag').value = '';
+  $('zahl-eingang').value = z.heute;
+  $('zahl-notiz').value = '';
+  $('zahl-fehler').textContent = '';
+  betragManuell = false;
+  $('zahl-tabelle').innerHTML = zahlungenTabelle(zl, { loeschen: true });
+  zahlungVorschau();
+}
+
+/** Übernimmt den Stand der Häkchen in Datum, Betrag und Vorschau. */
+function zahlungVorschau() {
+  const haken = [...$('zahl-liste').querySelectorAll('input[type=checkbox]')];
+  const gehakt = haken.filter((h) => h.checked);
+  haken.forEach((h) => h.closest('.zahl-zeile').classList.toggle('gehakt', h.checked));
+  const letzte = gehakt.at(-1)?.dataset.datum ?? '';
+  $('zahl-bis').value = letzte;
+  const summe = gehakt.reduce((s, h) => s + z.zahlungen.ziehungen.find((x) => x.datum === h.dataset.datum).anteil, 0);
+  if (!betragManuell) $('zahl-betrag').value = gehakt.length ? (Math.round(summe * 100) / 100).toFixed(2) : '';
+  $('zahl-vorschau').textContent = gehakt.length
+    ? `Bezahlt bis ${datumLang(letzte)} (${kwText(z.zahlungen.ziehungen.find((x) => x.datum === letzte).kw)}): ${gehakt.length} ${plural(gehakt.length, 'Ziehung', 'Ziehungen')} mit zusammen ${fe(summe)}.`
+    : 'Hake die Ziehungen ab, die bezahlt sind, oder gib „bezahlt bis zum“ ein. Der Betrag wird berechnet und lässt sich ändern.';
+}
+
+$('zahl-liste').addEventListener('change', (e) => {
+  const haken = [...$('zahl-liste').querySelectorAll('input[type=checkbox]')];
+  const index = haken.indexOf(e.target);
+  // Wer eine Ziehung abhakt, hat auch alle früheren bezahlt, wer abwählt, auch alle späteren nicht
+  haken.forEach((h, i) => { if (e.target.checked ? i <= index : i >= index) h.checked = e.target.checked; });
+  zahlungVorschau();
+});
+
+$('zahl-alle').addEventListener('click', () => {
+  $('zahl-liste').querySelectorAll('input[type=checkbox]').forEach((h) => { h.checked = true; });
+  zahlungVorschau();
+});
+
+$('zahl-bis').addEventListener('change', (e) => {
+  // Datum eingeben: alle Ziehungen bis dahin (am oder vor dem Datum) werden abgehakt
+  $('zahl-liste').querySelectorAll('input[type=checkbox]').forEach((h) => { h.checked = Boolean(e.target.value) && h.dataset.datum <= e.target.value; });
+  zahlungVorschau();
+});
+
+$('zahl-betrag').addEventListener('input', (e) => { betragManuell = e.target.value !== ''; });
+
+$('zahlung-formular').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  $('zahl-fehler').textContent = '';
+  const bis = $('zahl-bis').value;
+  if (!bis) {
+    $('zahl-fehler').textContent = 'Bitte mindestens eine Ziehung abhaken oder „bezahlt bis zum“ eingeben.';
+    return;
+  }
+  try {
+    z = await api('POST', '/api/zahlungen', {
+      bezahltBis: bis,
+      betrag: betragManuell ? Number($('zahl-betrag').value) : undefined,
+      eingegangenAm: $('zahl-eingang').value || undefined,
+      notiz: $('zahl-notiz').value,
+    });
+    render();
+    zahlungenFormular();
+    toast('Zahlung gespeichert.');
+  } catch (err) {
+    $('zahl-fehler').textContent = err.message;
+  }
+});
+
+$('zahl-tabelle').addEventListener('click', async (e) => {
+  const knopf = e.target.closest('[data-zahlung-loeschen]');
+  if (!knopf || !confirm('Diese Zahlung wirklich löschen? „Bezahlt bis“ fällt dann auf die vorherige Zahlung zurück.')) return;
+  try {
+    z = await api('DELETE', `/api/zahlungen/${knopf.dataset.zahlungLoeschen}`);
+    render();
+    zahlungenFormular();
+    toast('Zahlung gelöscht.');
+  } catch (err) {
+    $('zahl-fehler').textContent = err.message;
+  }
+});
+
 // -- Tabellen --
 
 function renderSpieler() {
@@ -394,7 +561,7 @@ function renderVerlauf() {
       ? `<span class="mini-zahlen"><b>${r.ziehung.nums.join(' ')}</b> · ${r.ziehung.euro ? `Euro ${r.ziehung.euro.join(' ')}` : `SZ ${r.ziehung.sz}`}</span>`
       : '<span class="grau">steht aus</span>';
     return `<tr class="klickbar${r.datum === gewaehlt ? ' gewaehlt' : ''}" data-datum="${r.datum}" tabindex="0">
-      <td class="nowrap">${datumLang(r.datum)}<br>${statusMarke(r)}</td>
+      <td class="nowrap">${datumLang(r.datum)}<br>${statusMarke(r)}${bezahltMarke(r.datum)}</td>
       <td>${gezogen}</td>
       ${spalten.map((sp) => `<td class="zahl">${zelle[sp.schluessel](a, offenLotto)}</td>`).join('')}
       <td class="zahl"><strong>${r.gewinn ? fe(r.gewinn) : '–'}</strong></td>
@@ -568,6 +735,7 @@ $('knopf-einstellungen').addEventListener('click', () => {
   ['pw-neu', 'adm-alt', 'adm-neu'].forEach((id) => { $(id).value = ''; });
   $('pw-zeigen').checked = false;
   $('pw-neu').type = 'password';
+  zahlungenFormular();
   oeffneDialog($('dialog-einstellungen'));
 });
 

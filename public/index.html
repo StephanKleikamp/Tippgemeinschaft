@@ -41,6 +41,7 @@
     <p id="status" class="status" aria-live="polite"></p>
     <section id="karten" class="karten" aria-label="Zusammenfassung"></section>
     <section id="abgleich" aria-label="Abgleich mit dem Tippschein"></section>
+    <section id="zahlungen" aria-label="Zahlungen" hidden></section>
 
     <section>
       <div class="abschnitt-kopf"><h2>Mitspieler</h2><span id="wochen-badge" class="badge"></span></div>
@@ -126,6 +127,25 @@
       <button class="btn primaer" type="submit">Speichern</button>
       <button class="btn sekundaer" type="button" data-schliessen>Abbrechen</button>
     </div>
+  </form>
+  <form id="zahlung-formular" method="dialog" class="dialog-form trenner" hidden>
+    <h3 id="zahl-titel">Zahlungen</h3>
+    <p class="hinweis" id="zahl-stand"></p>
+    <div class="zeile">
+      <label>Bezahlte Ziehungen abhaken <button class="btn sekundaer klein" type="button" id="zahl-alle">alle bis zur letzten</button></label>
+      <div class="zahl-liste" id="zahl-liste" role="group" aria-label="Noch nicht bezahlte Ziehungen"></div>
+    </div>
+    <div class="raster-2">
+      <div class="zeile"><label for="zahl-bis">Bezahlt bis zum</label><input type="date" id="zahl-bis"></div>
+      <div class="zeile"><label for="zahl-betrag">Betrag (€)</label><input type="number" id="zahl-betrag" step="0.01"></div>
+      <div class="zeile"><label for="zahl-eingang">Zahlungseingang am</label><input type="date" id="zahl-eingang"></div>
+      <div class="zeile"><label for="zahl-notiz">Notiz (optional)</label><input type="text" id="zahl-notiz" maxlength="80"></div>
+    </div>
+    <p class="hinweis" id="zahl-vorschau"></p>
+    <p class="fehler" id="zahl-fehler" role="alert"></p>
+    <div class="dialog-knoepfe"><button class="btn primaer" type="submit" id="zahl-speichern">Zahlung speichern</button></div>
+    <h4 class="zahl-unter">Erfasste Zahlungen</h4>
+    <div class="tabelle-rahmen"><table id="zahl-tabelle"></table></div>
   </form>
   <form id="passwort-formular" method="dialog" class="dialog-form trenner">
     <h3>Passwort der Mitglieder</h3>

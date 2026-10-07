@@ -21,7 +21,7 @@ test('Spiel wählen: Standard ist 6aus49, unbekannte Spiele werden abgelehnt', (
   assert.equal(waehleSpiel('eurojackpot').name, 'Eurojackpot');
   assert.throws(() => waehleSpiel('keno'), /Unbekanntes Spiel/);
   const o = oeffentlich(EURO);
-  assert.deepEqual(Object.keys(o).sort(), ['feld', 'felder', 'id', 'kosten', 'name', 'serie', 'seitentitel', 'spalten', 'symbol', 'titel', 'untertitel', 'zusatz']);
+  assert.deepEqual(Object.keys(o).sort(), ['feld', 'felder', 'id', 'kosten', 'name', 'seitentitel', 'serie', 'spalten', 'symbol', 'titel', 'untertitel', 'zahlungen', 'zusatz']);
   assert.equal(o.zusatz, false);
   assert.equal(o.feld.zahlen, 5);
 });

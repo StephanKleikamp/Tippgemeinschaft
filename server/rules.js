@@ -294,3 +294,82 @@ export function baueAbrechnung({ ziehungen, scheine, startDatum, heute, korrektu
     },
   };
 }
+
+// ---- Zahlungen des ersten Mitspielers ----
+
+/** ISO-Kalenderwoche (ISO 8601: die Woche mit dem ersten Donnerstag des Jahres ist KW 1). */
+export function isoKw(iso) {
+  const d = new Date(`${iso}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+  const jahresanfang = Date.UTC(d.getUTCFullYear(), 0, 1);
+  return Math.ceil(((d.getTime() - jahresanfang) / 86400000 + 1) / 7);
+}
+
+/**
+ * Der erste Mitspieler zahlt seinen Anteil an Kosten minus Gewinnen in Abständen, der Admin dokumentiert die
+ * Zahlungen mit „bezahlt bis“ (Datum einer Ziehung). Hier wird daraus berechnet, was bezahlt ist und was noch fehlt.
+ *
+ * Grundlage sind nur Ziehungen mit endgültigen Quoten, damit der Betrag feststeht. Korrekturbuchungen zählen zur
+ * ersten endgültigen Ziehung am oder nach ihrem Datum. Der Anteil je Ziehung ist (Kosten − Gewinn) / Mitspieler und auf
+ * Cent gerundet. Ein negativer Betrag bedeutet Guthaben des Zahlers.
+ */
+export function baueZahlungen({ zeilen, korrekturen = [], spieler = [], zahlungen = [] }) {
+  const n = spieler.length || 1;
+  const mitZiehung = zeilen.filter((z) => z.ziehung);
+  const endgueltig = mitZiehung.filter((z) => z.status === 'endgueltig');
+  const stand = endgueltig.length ? endgueltig[endgueltig.length - 1].datum : null;
+
+  const anteile = new Map(endgueltig.map((z) => [z.datum, (z.kosten - z.gewinn) / n]));
+  for (const k of korrekturen) {
+    const ziel = endgueltig.find((z) => z.datum >= k.datum);
+    if (ziel) anteile.set(ziel.datum, anteile.get(ziel.datum) - (k.lotto + k.spiel77 + k.super6) / n);
+  }
+
+  const sortiert = [...zahlungen].sort((a, b) => a.bezahltBis.localeCompare(b.bezahltBis) || a.id - b.id);
+  const bezahltBis = sortiert.length ? sortiert[sortiert.length - 1].bezahltBis : null;
+  const bezahlt = round2(sortiert.reduce((s, z) => s + z.betrag, 0));
+
+  const ziehungen = endgueltig.map((z) => ({
+    datum: z.datum,
+    kw: isoKw(z.datum),
+    anteil: round2(anteile.get(z.datum)),
+    bezahlt: Boolean(bezahltBis) && z.datum <= bezahltBis,
+  }));
+  const summe = (liste) => round2(liste.reduce((s, z) => s + z.anteil, 0));
+  const zeitraum = (liste) => (liste.length
+    ? { von: liste[0].datum, bis: liste[liste.length - 1].datum, kwVon: liste[0].kw, kwBis: liste[liste.length - 1].kw, ziehungen: liste.length }
+    : null);
+
+  const bezahlteZiehungen = ziehungen.filter((z) => z.bezahlt);
+  const offeneZiehungen = ziehungen.filter((z) => !z.bezahlt);
+  const sollBezahlt = summe(bezahlteZiehungen);
+  return {
+    zahler: spieler[0] ?? 'Spieler 1',
+    zahlungen: sortiert.map((z) => ({ ...z, kw: isoKw(z.bezahltBis) })),
+    bezahlt,
+    bezahltBis,
+    bezahltBisKw: bezahltBis ? isoKw(bezahltBis) : null,
+    abgedeckt: zeitraum(bezahlteZiehungen),
+    stand,
+    standKw: stand ? isoKw(stand) : null,
+    // noch zu zahlen bis zur letzten endgültigen Ziehung; negativ = Guthaben
+    offenBetrag: round2(summe(ziehungen) - bezahlt),
+    offen: zeitraum(offeneZiehungen),
+    // Differenz zwischen Gezahltem und dem, was für den bezahlten Zeitraum berechnet wird (Rundung, spätere Korrekturen)
+    abweichung: round2(bezahlt - sollBezahlt),
+    // neuere Ziehungen, deren Quoten noch fehlen
+    ausstehend: mitZiehung.filter((z) => z.status === 'vorlaeufig' && (!stand || z.datum > stand)).map((z) => ({ datum: z.datum, kw: isoKw(z.datum) })),
+    ziehungen,
+  };
+}
+
+/** Auf welche Ziehung bezieht sich ein eingegebenes Datum: die letzte endgültige Ziehung am oder vor dem Datum. */
+export function ziehungsdatumBis(block, datum) {
+  const treffer = block.ziehungen.filter((z) => z.datum <= datum);
+  return treffer.length ? treffer[treffer.length - 1].datum : null;
+}
+
+/** Vorgeschlagener Betrag für eine neue Zahlung bis zu einer Ziehung: Summe der Anteile der noch unbezahlten Ziehungen bis dahin. */
+export function betragBis(block, bis) {
+  return round2(block.ziehungen.filter((z) => !z.bezahlt && z.datum <= bis).reduce((s, z) => s + z.anteil, 0));
+}

@@ -268,6 +268,72 @@ await test('Spiel: Beschriftung und Eingabemaske passen zum Spiel dieser Instanz
   assert.equal(await page.locator('#einst-start-label').textContent(), `Erster Spieltag (${sp.serie})`);
 }, { rolle: 'admin' });
 
+await test('Zahlungen: Mitglieder sehen den Stand ohne Bedienelemente (nur Spiele mit Zahlungen)', async ({ page }) => {
+  const sp = await page.evaluate(() => fetch('/api/spiel').then((r) => r.json()));
+  if (!sp.zahlungen) return;
+  assert.equal(await page.isVisible('#zahlung-formular'), false, 'das Formular gibt es nur im Admin-Zugang');
+  assert.equal(await page.locator('[data-zahlung-loeschen]').count(), 0);
+  // Der Abschnitt erscheint für Mitglieder erst nach der ersten dokumentierten Zahlung
+  const hatZahlung = await page.evaluate(() => fetch('/api/zustand').then((r) => r.json()).then((z) => z.zahlungen.zahlungen.length > 0));
+  assert.equal(await page.isVisible('#zahlungen'), hatZahlung);
+  if (hatZahlung) assert.equal(await page.locator('#zahlungen .karte').count(), 3);
+}, { rolle: 'mitglied' });
+
+await test('Schreiben: Zahlung abhaken und speichern, Mitglieder sehen sie, Zahlung wieder löschen', async ({ page }) => {
+  const sp = await page.evaluate(() => fetch('/api/spiel').then((r) => r.json()));
+  if (!sp.zahlungen) return;
+  // Reste früherer, abgebrochener Läufe wegräumen (nur Zahlungen mit der Test-Notiz)
+  await page.evaluate(async () => {
+    const z = await fetch('/api/zustand').then((r) => r.json());
+    for (const x of z.zahlungen.zahlungen.filter((y) => y.notiz.startsWith('E2E-Test'))) await fetch(`/api/zahlungen/${x.id}`, { method: 'DELETE' });
+  });
+  await page.reload();
+  await page.waitForSelector('#karten .karte');
+  const notiz = `E2E-Test ${Date.now()}`;
+  const schonBezahlt = await page.evaluate(() => fetch('/api/zustand').then((r) => r.json()).then((z) => z.zahlungen.ziehungen.filter((x) => x.bezahlt).length));
+  await page.click('#knopf-einstellungen');
+  const haken = page.locator('#zahl-liste input[type=checkbox]');
+  const anzahl = await haken.count();
+  assert.ok(anzahl >= 3, 'mindestens drei unbezahlte Ziehungen für den Test nötig');
+  // die dritte abhaken: die beiden davor werden mit abgehakt, Datum und Betrag erscheinen
+  await haken.nth(2).check();
+  assert.equal(await page.locator('#zahl-liste input:checked').count(), 3);
+  const bis = await haken.nth(2).getAttribute('data-datum');
+  assert.equal(await page.inputValue('#zahl-bis'), bis);
+  assert.match(await page.inputValue('#zahl-betrag'), /^-?\d+\.\d{2}$/);
+  // die zweite abwählen: auch die dritte fällt heraus
+  await haken.nth(1).uncheck();
+  assert.equal(await page.locator('#zahl-liste input:checked').count(), 1);
+  // „bezahlt bis zum“ eingeben hakt alles bis dahin ab
+  await page.fill('#zahl-bis', bis);
+  assert.equal(await page.locator('#zahl-liste input:checked').count(), 3);
+  await page.fill('#zahl-notiz', notiz);
+  await page.click('#zahl-speichern');
+  await page.waitForFunction((n) => document.getElementById('zahl-tabelle').textContent.includes(n), notiz);
+  assert.equal(await page.locator('#zahl-liste input[type=checkbox]').count(), anzahl - 3, 'bezahlte Ziehungen verschwinden aus der Liste');
+  await page.keyboard.press('Escape');
+  assert.equal(await page.locator('#zahlungen .karte').count(), 3);
+  // die bezahlten Ziehungen sind die ältesten, der Verlauf zeigt zunächst nur die neuesten
+  if (await page.locator('#verlauf-umschalten').count()) await page.click('#verlauf-umschalten');
+  assert.equal(await page.locator('#verlauf-tabelle .marke-status:has-text("bezahlt")').count(), schonBezahlt + 3, 'drei Ziehungen mehr sind als bezahlt markiert');
+
+  // Mitglied sieht den Abschnitt jetzt
+  if (passwoerter.mitglied) {
+    const m = await offen({ rolle: 'mitglied' });
+    assert.equal(await m.page.isVisible('#zahlungen'), true);
+    assert.match(await text(m.page, '#zahlungen'), /bereits bezahlt/i);
+    assert.equal(await m.page.locator('[data-zahlung-loeschen]').count(), 0);
+    await m.context.close();
+  }
+
+  // aufräumen
+  page.once('dialog', (d) => d.accept());
+  await page.click('#knopf-einstellungen');
+  await page.click(`#zahl-tabelle tr:has-text("${notiz}") [data-zahlung-loeschen]`);
+  await page.waitForFunction((n) => !document.getElementById('zahl-tabelle').textContent.includes(n), notiz);
+  assert.equal(await page.locator('#zahl-liste input[type=checkbox]').count(), anzahl);
+}, { rolle: 'admin' });
+
 await test('Schreiben: Admin ändert die Mitspieler und stellt sie wieder her', async ({ page }) => {
   await page.click('#knopf-einstellungen');
   const vorher = await page.inputValue('#einst-spieler');

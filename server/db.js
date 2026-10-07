@@ -83,6 +83,14 @@ export function oeffneDatenbank(datei, standard = SPIELE.lotto) {
       notiz TEXT NOT NULL DEFAULT ''
     );
 
+    CREATE TABLE IF NOT EXISTS zahlungen (
+      id INTEGER PRIMARY KEY,
+      bezahlt_bis TEXT NOT NULL,
+      betrag REAL NOT NULL,
+      eingegangen_am TEXT NOT NULL,
+      notiz TEXT NOT NULL DEFAULT ''
+    );
+
     CREATE TABLE IF NOT EXISTS sitzungen (
       token_hash TEXT PRIMARY KEY,
       laeuft_ab INTEGER NOT NULL,
@@ -225,6 +233,19 @@ export function erstelleStore(db, spiel = SPIELE.lotto) {
     },
     loescheKorrektur(id) {
       return q('DELETE FROM korrekturen WHERE id = ?').run(id).changes > 0;
+    },
+
+    zahlungen() {
+      return q('SELECT * FROM zahlungen ORDER BY bezahlt_bis, id').all().map((r) => ({
+        id: r.id, bezahltBis: r.bezahlt_bis, betrag: r.betrag, eingegangenAm: r.eingegangen_am, notiz: r.notiz,
+      }));
+    },
+    legeZahlungAn(z) {
+      return Number(q('INSERT INTO zahlungen (bezahlt_bis, betrag, eingegangen_am, notiz) VALUES (?, ?, ?, ?)')
+        .run(z.bezahltBis, z.betrag, z.eingegangenAm, z.notiz).lastInsertRowid);
+    },
+    loescheZahlung(id) {
+      return q('DELETE FROM zahlungen WHERE id = ?').run(id).changes > 0;
     },
 
     legeSitzungAn(tokenHash, laeuftAb, rolle = 'mitglied') {

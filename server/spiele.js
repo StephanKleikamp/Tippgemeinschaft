@@ -26,6 +26,7 @@ export const SPIELE = {
     feld: { zahlen: 6, max: 49, extra: { art: 'sz', anzahl: 1, min: 0, max: 9 } },
     felder: 8,
     zusatz: true,
+    zahlungen: false,
     spalten: [{ schluessel: 'lotto', label: '6aus49' }, { schluessel: 'spiel77', label: 'Spiel 77' }, { schluessel: 'super6', label: 'Super 6' }],
     kosten: 13.35,
     startDatum: '2026-01-03',
@@ -50,6 +51,7 @@ export const SPIELE = {
     feld: { zahlen: 5, max: 50, extra: { art: 'euro', anzahl: 2, min: 1, max: 12 } },
     felder: 12,
     zusatz: false,
+    zahlungen: true, // der erste Mitspieler zahlt seinen Anteil in Abständen, der Admin dokumentiert das
     spalten: [{ schluessel: 'lotto', label: 'Eurojackpot' }],
     kosten: 12.2,
     startDatum: '2026-01-02',
@@ -69,8 +71,8 @@ export function waehleSpiel(id = 'lotto') {
 
 /** Was der Browser über das Spiel wissen muss (keine Quellen, keine Zeitplan-Einzelheiten). */
 export function oeffentlich(spiel) {
-  const { id, name, symbol, titel, seitentitel, untertitel, serie, feld, felder, zusatz, spalten, kosten } = spiel;
-  return { id, name, symbol, titel, seitentitel, untertitel, serie, feld, felder, zusatz, spalten, kosten };
+  const { id, name, symbol, titel, seitentitel, untertitel, serie, feld, felder, zusatz, zahlungen, spalten, kosten } = spiel;
+  return { id, name, symbol, titel, seitentitel, untertitel, serie, feld, felder, zusatz, zahlungen, spalten, kosten };
 }
 
 /** Leeres Spielfeld, wie es die Datenbank für nicht ausgefüllte Zeilen liefert. */

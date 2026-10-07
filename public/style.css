@@ -173,6 +173,16 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.45); }
 .dialog-form { padding: 24px 26px; }
 .dialog-form h2 { font-size: 1.15rem; margin-bottom: 16px; }
 .dialog-form h3 { font-size: 1rem; margin-bottom: 12px; }
+.dialog-form h4.zahl-unter { font-size: 0.9rem; margin: 18px 0 8px; }
+.zahl-liste { border: 1px solid var(--rand); border-radius: 8px; max-height: 220px; overflow-y: auto; background: #fff; }
+.zeile .zahl-zeile { display: grid; grid-template-columns: 24px 1fr auto auto; gap: 8px; align-items: center; padding: 7px 12px; border-bottom: 1px solid var(--rand); cursor: pointer; font-size: 0.88rem; text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--text); margin: 0; }
+.zeile .zahl-zeile:last-child { border-bottom: 0; }
+.zeile .zahl-zeile:hover { background: #f6f9fc; }
+.zeile .zahl-zeile.gehakt { background: var(--primaer-hell); }
+.zeile .zahl-zeile input { width: 18px; height: 18px; }
+.zeile .zahl-zeile .betrag { font-variant-numeric: tabular-nums; font-weight: 600; }
+.zahl-leer { padding: 14px; text-align: center; color: var(--gedaempft); font-size: 0.88rem; }
+.zeile > label .btn { margin-left: 8px; text-transform: none; letter-spacing: 0; vertical-align: middle; }
 .dialog-form.trenner { border-top: 1px solid var(--rand); background: #f9fbfc; }
 .zeile { margin-bottom: 12px; }
 .zeile label { display: block; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--gedaempft); margin-bottom: 5px; }

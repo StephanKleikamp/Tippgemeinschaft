@@ -6,7 +6,7 @@
 import crypto from 'node:crypto';
 import express from 'express';
 import { hashPassword, verifyPassword, sha256 } from './db.js';
-import { baueAbrechnung } from './rules.js';
+import { baueAbrechnung, baueZahlungen, ziehungsdatumBis, betragBis } from './rules.js';
 import { berlinHeute, naechsterSpieltag } from './sync.js';
 import { SPIELE, leeresFeld, oeffentlich } from './spiele.js';
 
@@ -225,13 +225,22 @@ export function erstelleApp({ store, sync, spiel = SPIELE.lotto, jetzt = () => D
     next();
   };
 
-  function zustand(rolle) {
+  function rechnen() {
     const { spieler, startDatum } = store.einstellungen();
     const heute = berlinHeute(jetzt());
     const korrekturen = store.korrekturen();
     const abrechnung = baueAbrechnung({
       ziehungen: store.ziehungen(), scheine: store.scheine(), startDatum, heute, korrekturen, spieler, spiel,
     });
+    // Zahlungen des ersten Mitspielers gibt es nur bei Spielen mit `zahlungen: true`
+    const zahlungen = spiel.zahlungen
+      ? baueZahlungen({ zeilen: abrechnung.zeilen, korrekturen, spieler, zahlungen: store.zahlungen() })
+      : null;
+    return { spieler, startDatum, heute, korrekturen, abrechnung, zahlungen };
+  }
+
+  function zustand(rolle) {
+    const { spieler, startDatum, heute, korrekturen, abrechnung, zahlungen } = rechnen();
     return {
       rolle,
       spiel: oeffentlich(spiel),
@@ -241,6 +250,7 @@ export function erstelleApp({ store, sync, spiel = SPIELE.lotto, jetzt = () => D
       scheine: store.scheine(),
       korrekturen,
       abrechnung,
+      zahlungen,
       sync: sync.status(),
     };
   }
@@ -291,6 +301,41 @@ export function erstelleApp({ store, sync, spiel = SPIELE.lotto, jetzt = () => D
 
   app.delete('/api/korrekturen/:id', nurAdmin, (req, res) => {
     if (!store.loescheKorrektur(Number(req.params.id))) return res.status(404).json({ error: 'Buchung nicht gefunden.' });
+    res.json(zustand(req.sitzung.rolle));
+  });
+
+  // ---- Zahlungen des ersten Mitspielers (nur Eurojackpot) ----
+
+  const nurMitZahlungen = (req, res, next) => {
+    if (!spiel.zahlungen) return res.status(404).json({ error: 'Zahlungen gibt es in dieser Tippgemeinschaft nicht.' });
+    next();
+  };
+  const deDatum = (iso) => iso.split('-').reverse().join('.');
+
+  app.post('/api/zahlungen', nurMitZahlungen, nurAdmin, (req, res) => {
+    const block = rechnen().zahlungen;
+    const body = req.body ?? {};
+    if (!istDatum(body.bezahltBis)) ungueltig('Bitte ein gültiges Datum „bezahlt bis“ angeben.');
+    // „bezahlt bis“ gilt immer bis zu einer Ziehung: die letzte endgültige Ziehung am oder vor dem Datum
+    const bis = ziehungsdatumBis(block, body.bezahltBis);
+    if (!bis) ungueltig('Bis zu diesem Datum gibt es noch keine Ziehung mit endgültigen Quoten.');
+    if (block.bezahltBis && bis <= block.bezahltBis) {
+      ungueltig(`Es ist bereits bis ${deDatum(block.bezahltBis)} bezahlt. Bitte ein späteres Datum wählen oder die letzte Zahlung löschen.`);
+    }
+    const eingegangenAm = body.eingegangenAm ?? berlinHeute(jetzt());
+    if (!istDatum(eingegangenAm)) ungueltig('Bitte ein gültiges Datum für den Zahlungseingang angeben.');
+    let betrag = betragBis(block, bis);
+    if (body.betrag !== undefined && body.betrag !== null && body.betrag !== '') {
+      betrag = Number(body.betrag);
+      if (!Number.isFinite(betrag) || Math.abs(betrag) > 100000) ungueltig('Bitte einen gültigen Betrag eingeben.');
+      betrag = runden(betrag);
+    }
+    store.legeZahlungAn({ bezahltBis: bis, betrag, eingegangenAm, notiz: String(body.notiz ?? '').trim().slice(0, 80) });
+    res.json(zustand(req.sitzung.rolle));
+  });
+
+  app.delete('/api/zahlungen/:id', nurMitZahlungen, nurAdmin, (req, res) => {
+    if (!store.loescheZahlung(Number(req.params.id))) return res.status(404).json({ error: 'Zahlung nicht gefunden.' });
     res.json(zustand(req.sitzung.rolle));
   });
 

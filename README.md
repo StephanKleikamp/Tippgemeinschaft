@@ -35,6 +35,27 @@ Korrekturbuchungen. Gewinne, Kosten und Bilanz berechnet `server/rules.js` bei j
 - **Korrekturbuchungen** bleiben für alles, was von den amtlichen Zahlen abweicht (zum Beispiel eine Gutschrift der
   Annahmestelle).
 
+## Zahlungen des ersten Mitspielers (nur Eurojackpot)
+
+Bei Eurojackpot zahlt der erste Mitspieler (Florian) seinen Anteil an Kosten minus Gewinnen in Abständen von 6 bis 10 Wochen
+an den Organisator. Die App hält fest, bis wann er bezahlt hat, und rechnet den Rest aus (`spiele.js`: `zahlungen: true`,
+bei 6aus49 aus).
+
+- **Modell:** Eine Zahlung ist „bezahlt bis“ (Datum einer Ziehung) mit Betrag, Zahlungseingang und Notiz. Der Anteil je Ziehung
+  ist (Kosten − Gewinn) geteilt durch die Zahl der Mitspieler, auf Cent gerundet. Grundlage sind nur Ziehungen mit
+  endgültigen Quoten, damit der Betrag feststeht. Korrekturbuchungen zählen zur ersten endgültigen Ziehung ab ihrem Datum.
+  Neuere Ziehungen ohne Quoten werden gemeldet und zählen erst später.
+- **Mitglieder** sehen (sobald die erste Zahlung dokumentiert ist): Bereits bezahlt (Summe, Zahl der Zahlungen), Bezahlt für
+  (Zeitraum in Kalenderwochen und Daten), Noch zu zahlen (Betrag, Zeitraum, Zahl der Ziehungen bis zur letzten Ziehung),
+  die Zahlungen als Liste und im Verlauf eine Marke „bezahlt“. Ein Guthaben (Gewinne über den Kosten) wird als Guthaben gezeigt.
+- **Admin** (Einstellungen → „Zahlungen von …“): Ziehungen abhaken (wer eine abhakt, hat alle früheren bezahlt) oder
+  „bezahlt bis zum“ eingeben. Betrag (vorbelegt mit der Summe der Anteile, änderbar), Zahlungseingang (vorbelegt: heute) und
+  Notiz sind optional. Ein eingegebenes Datum gilt bis zur letzten endgültigen Ziehung am oder vor diesem Tag. „Bezahlt bis“
+  kann nur wachsen, eine Zahlung lässt sich löschen. Weicht der gezahlte Betrag vom berechneten ab, steht das als Hinweis da
+  und der offene Betrag gleicht es aus.
+- Schnittstelle: `POST /api/zahlungen` und `DELETE /api/zahlungen/:id` (nur Admin, bei 6aus49 `404`), die Berechnung steckt in
+  `baueZahlungen` (`server/rules.js`) und kommt als `zahlungen` im Zustand.
+
 ## Betrieb
 
 | | |
@@ -79,8 +100,8 @@ Der Server fragt nur Gewinnzahlen ab. Es werden keine Angaben der Tippgemeinscha
 npm install
 INITIAL_PASSWORD=geheim-1234 DATA_DIR=.data PORT=3000 COOKIE_INSECURE=1 npm start
 SPIEL=eurojackpot INITIAL_PASSWORD=... ADMIN_PASSWORD=... DATA_DIR=.data-euro PORT=3001 COOKIE_INSECURE=1 npm start   # Eurojackpot-Instanz
-npm test                                    # 78 Tests: Regeln beider Spiele, Quellen, Abruf, Sicherung, Rollen, Schnittstelle
-E2E_PASSWORD=geheim-1234 E2E_ADMIN_PASSWORD=... npm run e2e -- http://127.0.0.1:3000/ [--schreiben]   # 14 Browser-Tests (Playwright), erkennen das Spiel selbst
+npm test                                    # 95 Tests: Regeln beider Spiele, Quellen, Abruf, Sicherung, Rollen, Zahlungen, Schnittstelle
+E2E_PASSWORD=geheim-1234 E2E_ADMIN_PASSWORD=... npm run e2e -- http://127.0.0.1:3000/ [--schreiben]   # 16 Browser-Tests (Playwright), erkennen das Spiel selbst
 ```
 
 Die E2E-Tests mit `--schreiben` legen Buchungen an und löschen sie wieder. Gegen die echte Instanz nur ohne diese Option
