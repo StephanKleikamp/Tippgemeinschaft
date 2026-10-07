@@ -8,10 +8,12 @@
  *  3. Fällt lotto.de aus: letzte Ziehung von Lotto Hessen, ältere Zahlen aus dem Archiv (dann ohne Quoten, also vorläufig).
  *
  * Den Zeitplan (`sollLaufen`) übernimmt ein Zeitgeber, der alle 5 Minuten schaut: nach dem Ziehungsabend wird alle 15 Minuten
- * gefragt, bis die Quoten da sind (laut Stichprobe erst am Montagmorgen), sonst einmal am Tag.
+ * gefragt, bis die Quoten da sind (laut Stichprobe bei 6aus49 erst am Montagmorgen), sonst einmal am Tag.
+ * Alles Spielspezifische (Wochentag, Uhrzeiten, Serie) steht in spiele.js.
  */
-import { SERIE, addDays, isoWeekday, letzterSamstag } from './rules.js';
+import { addDays, isoWeekday, letzterWochentag } from './rules.js';
 import { berlinDatum } from './sources.js';
+import { SPIELE } from './spiele.js';
 
 const MIN = 60 * 1000;
 const PAUSE_ZWISCHEN_ABRUFEN_MS = 300;
@@ -25,23 +27,26 @@ export function berlinMinuten(ms = Date.now()) {
   return (wert('hour') % 24) * 60 + wert('minute');
 }
 
-/** Samstag, dessen Ergebnis jetzt zu erwarten ist: bis 19:45 Uhr am Spieltag noch der Samstag davor. */
-export function erwarteteZiehung(ms) {
+/** Spieltag, dessen Ergebnis jetzt zu erwarten ist: bis kurz nach der Ziehung am Spieltag noch der Spieltag davor. */
+export function erwarteteZiehung(ms, spiel = SPIELE.lotto) {
   const heute = berlinHeute(ms);
-  if (isoWeekday(heute) === 6 && berlinMinuten(ms) < 19 * 60 + 45) return addDays(heute, -7);
-  return letzterSamstag(heute);
+  if (isoWeekday(heute) === spiel.wochentag && berlinMinuten(ms) < spiel.ergebnisAb) return addDays(heute, -7);
+  return letzterWochentag(heute, spiel.wochentag);
 }
 
-/** Nächster Spieltag (Samstag), der noch bevorsteht: am Spieltag selbst bis 19:00 Uhr heute. */
-export function naechsterSpieltag(ms) {
+/** Nächster Spieltag, der noch bevorsteht: am Spieltag selbst bis kurz vor der Ziehung heute. */
+export function naechsterSpieltag(ms, spiel = SPIELE.lotto) {
   const heute = berlinHeute(ms);
-  if (isoWeekday(heute) === 6 && berlinMinuten(ms) < 19 * 60) return heute;
-  return addDays(letzterSamstag(heute), 7);
+  if (isoWeekday(heute) === spiel.wochentag && berlinMinuten(ms) < spiel.ziehungUm) return heute;
+  return addDays(letzterWochentag(heute, spiel.wochentag), 7);
 }
+
+const sortiert = (liste) => (liste ?? []).slice().sort((x, y) => x - y).join();
 
 const gleicheZiehung = (a, b) =>
-  a.nums.slice().sort((x, y) => x - y).join() === b.nums.slice().sort((x, y) => x - y).join()
-  && a.sz === b.sz
+  sortiert(a.nums) === sortiert(b.nums)
+  && (a.sz ?? null) === (b.sz ?? null)
+  && sortiert(a.euro) === sortiert(b.euro)
   && (!a.spiel77 || !b.spiel77 || a.spiel77 === b.spiel77)
   && (!a.super6 || !b.super6 || a.super6 === b.super6);
 
@@ -53,7 +58,7 @@ function ersetzt(alt, neu) {
   return alt.quelle === 'archiv' || neu.quelle !== 'archiv';
 }
 
-export function erstelleSync({ store, quellen, jetzt = () => Date.now(), log = console, pause = PAUSE_ZWISCHEN_ABRUFEN_MS }) {
+export function erstelleSync({ store, quellen, spiel = SPIELE.lotto, jetzt = () => Date.now(), log = console, pause = PAUSE_ZWISCHEN_ABRUFEN_MS }) {
   let laufend = null;
   let letzterLauf = null; // { ok, geholt, fehler[], quelle }
 
@@ -78,8 +83,9 @@ export function erstelleSync({ store, quellen, jetzt = () => Date.now(), log = c
       tage = [];
     }
 
-    // Mittwochsziehungen interessieren nicht; alles, was kein Mittwoch ist, wird geholt (auch verschobene Ziehungen)
-    const kandidaten = tage.filter((t) => t >= startDatum && t <= heute && isoWeekday(t) !== 3).sort();
+    // Die Ziehungen der anderen Wochentage (6aus49: Mittwoch, Eurojackpot: Dienstag) interessieren nicht; alles andere
+    // wird geholt, auch verschobene Ziehungen
+    const kandidaten = tage.filter((t) => t >= startDatum && t <= heute && !spiel.ignorierteTage.includes(isoWeekday(t))).sort();
     let hintereinander = 0;
     for (const tag of kandidaten) {
       const alt = store.ziehung(tag);
@@ -107,7 +113,7 @@ export function erstelleSync({ store, quellen, jetzt = () => Date.now(), log = c
     // 2. Gegenprüfung beziehungsweise Ersatz über Lotto Hessen
     try {
       const h = await quellen.hessenLetzte();
-      if (h.date >= startDatum && h.serie === SERIE && h.date <= heute) {
+      if (h.date >= startDatum && h.serie === spiel.serie && h.date <= heute) {
         const alt = store.ziehung(h.date);
         if (!alt || alt.quelle === 'archiv') {
           store.speichereZiehung({ ...h, geprueft: null }, jetzt());
@@ -139,7 +145,7 @@ export function erstelleSync({ store, quellen, jetzt = () => Date.now(), log = c
     if (!lottoDeOk) {
       try {
         for (const z of await quellen.archiv(startDatum)) {
-          if (z.serie !== SERIE || z.date > heute || store.ziehung(z.date)) continue;
+          if (z.serie !== spiel.serie || z.date > heute || store.ziehung(z.date)) continue;
           store.speichereZiehung({ ...z, geprueft: null }, jetzt());
           geholt += 1;
         }
@@ -178,9 +184,9 @@ export function erstelleSync({ store, quellen, jetzt = () => Date.now(), log = c
     if (!versuch) return true;
 
     const { startDatum } = store.einstellungen();
-    const erwartet = erwarteteZiehung(jetztMs);
+    const erwartet = erwarteteZiehung(jetztMs, spiel);
     if (erwartet >= startDatum) {
-      const letzte = store.ziehungen().filter((z) => z.serie === SERIE && z.date >= addDays(erwartet, -3)).pop();
+      const letzte = store.ziehungen().filter((z) => z.serie === spiel.serie && z.date >= addDays(erwartet, -3)).pop();
       // Maßgeblich sind nur die Quoten: Lotto Hessen kennt nur die letzte Ziehung und kann ältere nicht mehr gegenprüfen
       const veraltet = !letzte || !letzte.quoten;
       const frisch = berlinHeute(jetztMs) <= addDays(erwartet, 6);

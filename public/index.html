@@ -14,8 +14,8 @@
 
 <main id="anmeldung" class="anmeldung" hidden>
   <form id="anmeldeformular" class="anmeldebox">
-    <h1>🍀 Tippgemeinschaft</h1>
-    <p class="unter">Lotto 6aus49 · Spiel 77 · Super 6</p>
+    <h1><span id="anmelde-symbol">🍀</span> <span id="anmelde-titel">Tippgemeinschaft</span></h1>
+    <p class="unter" id="anmelde-untertitel">Lotto 6aus49 · Spiel 77 · Super 6</p>
     <p id="anmeldefehler" class="fehler" role="alert"></p>
     <label class="sr-only" for="passwort">Passwort</label>
     <input type="password" id="passwort" name="passwort" placeholder="Passwort" autocomplete="current-password" required>
@@ -26,8 +26,8 @@
 <div id="app" hidden>
   <header class="kopf">
     <div class="marke">
-      <h1>🍀 Tippgemeinschaft <span id="admin-marke" class="badge admin" hidden>Admin</span></h1>
-      <p>Lotto 6aus49 · Spiel 77 · Super 6</p>
+      <h1><span id="marke-symbol">🍀</span> <span id="marke-titel">Tippgemeinschaft</span> <span id="admin-marke" class="badge admin" hidden>Admin</span></h1>
+      <p id="marke-untertitel">Lotto 6aus49 · Spiel 77 · Super 6</p>
     </div>
     <div class="kopf-knoepfe">
       <button class="btn hell klein" id="knopf-abruf" type="button">🔄 Jetzt prüfen</button>
@@ -82,11 +82,11 @@
     </div>
     <p class="hinweis" id="schein-hinweis"></p>
     <table class="felder-tabelle">
-      <thead><tr><th scope="col">Feld</th><th scope="col">6 Zahlen (1–49), mit Leerzeichen getrennt</th><th scope="col">SZ</th></tr></thead>
+      <thead><tr><th scope="col">Feld</th><th scope="col" id="schein-kopf-zahlen">6 Zahlen (1–49), mit Leerzeichen getrennt</th><th scope="col" id="schein-kopf-extra">SZ</th></tr></thead>
       <tbody id="schein-felder"></tbody>
     </table>
     <div class="raster-2">
-      <div class="zeile">
+      <div class="zeile" id="schein-losnummer-zeile">
         <label for="schein-losnummer">Scheinnummer (7 Ziffern)</label>
         <input type="text" id="schein-losnummer" inputmode="numeric" maxlength="9" autocomplete="off" placeholder="z. B. 1234567">
       </div>
@@ -95,11 +95,11 @@
         <input type="number" id="schein-kosten" min="0.01" step="0.01" required>
       </div>
     </div>
-    <div class="haken">
+    <div class="haken" id="schein-haken">
       <label><input type="checkbox" id="schein-spiel77"> Spiel 77 spielen</label>
       <label><input type="checkbox" id="schein-super6"> Super 6 spielen</label>
     </div>
-    <p class="hinweis">Spiel 77 vergleicht alle 7 Ziffern der Scheinnummer, Super 6 die letzten 6, jeweils von rechts.</p>
+    <p class="hinweis" id="schein-zusatz-hinweis">Spiel 77 vergleicht alle 7 Ziffern der Scheinnummer, Super 6 die letzten 6, jeweils von rechts.</p>
     <p class="fehler" id="schein-fehler" role="alert"></p>
     <div class="dialog-knoepfe">
       <button class="btn primaer" type="submit" id="schein-speichern">Speichern</button>
@@ -118,7 +118,7 @@
       <textarea id="einst-spieler" rows="4" required></textarea>
     </div>
     <div class="zeile">
-      <label for="einst-start">Erster Spieltag (Samstag)</label>
+      <label for="einst-start" id="einst-start-label">Erster Spieltag (Samstag)</label>
       <input type="date" id="einst-start" required>
     </div>
     <p class="fehler" id="einst-fehler" role="alert"></p>
@@ -156,9 +156,9 @@
     <div class="raster-2">
       <div class="zeile"><label for="k-datum">Datum</label><input type="date" id="k-datum" required></div>
       <div class="zeile"><label for="k-notiz">Notiz</label><input type="text" id="k-notiz" maxlength="80" placeholder="z. B. Gutschrift Annahmestelle"></div>
-      <div class="zeile"><label for="k-lotto">6aus49 (€)</label><input type="number" id="k-lotto" step="0.01"></div>
-      <div class="zeile"><label for="k-spiel77">Spiel 77 (€)</label><input type="number" id="k-spiel77" step="0.01"></div>
-      <div class="zeile"><label for="k-super6">Super 6 (€)</label><input type="number" id="k-super6" step="0.01"></div>
+      <div class="zeile"><label for="k-lotto" id="k-lotto-label">6aus49 (€)</label><input type="number" id="k-lotto" step="0.01"></div>
+      <div class="zeile" id="k-spiel77-zeile"><label for="k-spiel77">Spiel 77 (€)</label><input type="number" id="k-spiel77" step="0.01"></div>
+      <div class="zeile" id="k-super6-zeile"><label for="k-super6">Super 6 (€)</label><input type="number" id="k-super6" step="0.01"></div>
     </div>
     <p class="fehler" id="k-fehler" role="alert"></p>
     <div class="dialog-knoepfe">

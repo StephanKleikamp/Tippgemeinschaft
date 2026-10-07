@@ -7,6 +7,8 @@
  * jederzeit nachvollziehbar und nach einer Korrektur am Schein automatisch richtig.
  */
 
+import { SPIELE } from './spiele.js';
+
 export const SERIE = 'Samstag';
 
 export const LOTTO_KLASSEN = {
@@ -21,6 +23,22 @@ export const LOTTO_KLASSEN = {
   9: { treffer: 2, sz: true, label: '2 Richtige + Superzahl' },
 };
 
+/** Eurojackpot: richtige Zahlen (aus 5) und Eurozahlen (aus 2) je Gewinnklasse. */
+export const EUROJACKPOT_KLASSEN = {
+  1: { treffer: 5, euro: 2 },
+  2: { treffer: 5, euro: 1 },
+  3: { treffer: 5, euro: 0 },
+  4: { treffer: 4, euro: 2 },
+  5: { treffer: 4, euro: 1 },
+  6: { treffer: 3, euro: 2 },
+  7: { treffer: 4, euro: 0 },
+  8: { treffer: 2, euro: 2 },
+  9: { treffer: 3, euro: 1 },
+  10: { treffer: 3, euro: 0 },
+  11: { treffer: 1, euro: 2 },
+  12: { treffer: 2, euro: 1 },
+};
+
 /**
  * Feste Beträge, falls die Quote einer Ziehung fehlt. Bei Super 6 und Spiel 77 sind alle Klassen
  * außer dem Jackpot (Spiel 77, Klasse 1) fest, bei 6aus49 nur Klasse 9. Eine Quote aus den
@@ -30,6 +48,7 @@ export const FEST = {
   lotto: { 9: 6 },
   spiel77: { 2: 77777, 3: 7777, 4: 777, 5: 77, 6: 17, 7: 5 },
   super6: { 1: 100000, 2: 6666, 3: 666, 4: 66, 5: 6, 6: 2.5 },
+  eurojackpot: {}, // alle Klassen schwanken mit der Zahl der Gewinner
 };
 
 export const SPIEL77_STELLEN = 7;
@@ -41,6 +60,14 @@ const round2 = (n) => Math.round(n * 100) / 100;
 export function lottoKlasse(treffer, szTreffer) {
   for (const [klasse, k] of Object.entries(LOTTO_KLASSEN)) {
     if (k.treffer === treffer && k.sz === szTreffer) return Number(klasse);
+  }
+  return null;
+}
+
+/** Gewinnklasse bei Eurojackpot, null wenn es keinen Gewinn gibt. */
+export function eurojackpotKlasse(treffer, euro) {
+  for (const [klasse, k] of Object.entries(EUROJACKPOT_KLASSEN)) {
+    if (k.treffer === treffer && k.euro === euro) return Number(klasse);
   }
   return null;
 }
@@ -79,49 +106,63 @@ export function addDays(iso, days) {
   return d.toISOString().slice(0, 10);
 }
 
-/** Erster Samstag am oder nach dem Datum. */
-export function ersterSamstag(iso) {
-  return addDays(iso, (6 - isoWeekday(iso) + 7) % 7);
+/** Erster Tag mit diesem Wochentag (0 = Sonntag … 6 = Samstag) am oder nach dem Datum. */
+export function ersterWochentag(iso, wochentag) {
+  return addDays(iso, (wochentag - isoWeekday(iso) + 7) % 7);
 }
 
-/** Letzter Samstag am oder vor dem Datum. */
-export function letzterSamstag(iso) {
-  return addDays(iso, -((isoWeekday(iso) + 1) % 7));
+/** Letzter Tag mit diesem Wochentag am oder vor dem Datum. */
+export function letzterWochentag(iso, wochentag) {
+  return addDays(iso, -((isoWeekday(iso) - wochentag + 7) % 7));
 }
 
-export function samstageZwischen(von, bis) {
+export function tageZwischen(von, bis, wochentag) {
   const out = [];
-  for (let d = ersterSamstag(von); d <= bis; d = addDays(d, 7)) out.push(d);
+  for (let d = ersterWochentag(von, wochentag); d <= bis; d = addDays(d, 7)) out.push(d);
   return out;
 }
 
-export const FELD_BUCHSTABEN = 'ABCDEFGH';
+export const ersterSamstag = (iso) => ersterWochentag(iso, 6);
+export const letzterSamstag = (iso) => letzterWochentag(iso, 6);
+export const samstageZwischen = (von, bis) => tageZwischen(von, bis, 6);
+
+export const FELD_BUCHSTABEN = 'ABCDEFGHIJKL';
 
 /**
- * Wertet eine Ziehung gegen einen Schein aus.
+ * Wertet eine Ziehung gegen einen Schein aus. Das Hauptspiel (6aus49 oder Eurojackpot) heißt im Ergebnis immer `lotto`.
  * `schaetzung` ist optional ({ 3: 7000, 8: 9 } für 6aus49) und füllt nur offene Beträge zur Anzeige.
  */
-export function werteZiehungAus(ziehung, schein, schaetzung = {}) {
+export function werteZiehungAus(ziehung, schein, schaetzung = {}, spiel = SPIELE.lotto) {
   const gezogen = new Set(ziehung.nums);
+  const gezogeneEuro = new Set(ziehung.euro ?? []);
+  const euro = spiel.id === 'eurojackpot';
   const felder = [];
   schein.felder.forEach((feld, index) => {
     if (!feld?.nums?.length) return;
     const treffer = feld.nums.filter((n) => gezogen.has(n));
-    const szTreffer = feld.sz === ziehung.sz;
-    const klasse = lottoKlasse(treffer.length, szTreffer);
-    const betrag = klasse ? betragFuer('lotto', klasse, ziehung.quoten) : null;
+    const gemeinsam = { index, label: FELD_BUCHSTABEN[index] ?? String(index + 1), nums: feld.nums, treffer };
+    let ergebnis;
+    if (euro) {
+      const euroTreffer = (feld.euro ?? []).filter((n) => gezogeneEuro.has(n));
+      const klasse = eurojackpotKlasse(treffer.length, euroTreffer.length);
+      ergebnis = {
+        euro: feld.euro ?? [],
+        euroTreffer,
+        klasse,
+        klasseLabel: klasse ? `${treffer.length} Richtige + ${euroTreffer.length} ${euroTreffer.length === 1 ? 'Eurozahl' : 'Eurozahlen'}` : null,
+      };
+    } else {
+      const szTreffer = feld.sz === ziehung.sz;
+      const klasse = lottoKlasse(treffer.length, szTreffer);
+      ergebnis = { sz: feld.sz, szTreffer, klasse, klasseLabel: klasse ? LOTTO_KLASSEN[klasse].label : null };
+    }
+    const betrag = ergebnis.klasse ? betragFuer(spiel.id, ergebnis.klasse, ziehung.quoten) : null;
     felder.push({
-      index,
-      label: FELD_BUCHSTABEN[index] ?? String(index + 1),
-      nums: feld.nums,
-      sz: feld.sz,
-      treffer,
-      szTreffer,
-      klasse,
-      klasseLabel: klasse ? LOTTO_KLASSEN[klasse].label : null,
+      ...gemeinsam,
+      ...ergebnis,
       betrag,
-      offen: Boolean(klasse) && betrag === null,
-      geschaetzt: klasse && betrag === null ? (schaetzung[klasse] ?? null) : null,
+      offen: Boolean(ergebnis.klasse) && betrag === null,
+      geschaetzt: ergebnis.klasse && betrag === null ? (schaetzung[ergebnis.klasse] ?? null) : null,
     });
   });
 
@@ -141,8 +182,8 @@ export function werteZiehungAus(ziehung, schein, schaetzung = {}) {
     };
   };
 
-  const spiel77 = zusatz(schein.spiel77, 'spiel77', SPIEL77_STELLEN, spiel77Klasse, ziehung.spiel77);
-  const super6 = zusatz(schein.super6, 'super6', SUPER6_STELLEN, super6Klasse, ziehung.super6);
+  const spiel77 = spiel.zusatz ? zusatz(schein.spiel77, 'spiel77', SPIEL77_STELLEN, spiel77Klasse, ziehung.spiel77) : null;
+  const super6 = spiel.zusatz ? zusatz(schein.super6, 'super6', SUPER6_STELLEN, super6Klasse, ziehung.super6) : null;
 
   const alle = [...felder, spiel77, super6].filter(Boolean);
   const summe = (list) => round2(list.reduce((s, x) => s + (x.betrag ?? 0), 0));
@@ -159,15 +200,15 @@ export function werteZiehungAus(ziehung, schein, schaetzung = {}) {
   };
 }
 
-/** Schätzung für noch nicht veröffentlichte Quoten: Median der letzten Ziehungen, nur Klassen 3 bis 8. */
-export function schaetzeQuoten(endgueltigeZiehungen, anzahl = 8) {
+/** Schätzung für noch nicht veröffentlichte Quoten: Median der letzten Ziehungen, nur die mittleren Klassen (Jackpots nicht). */
+export function schaetzeQuoten(endgueltigeZiehungen, anzahl = 8, spiel = SPIELE.lotto) {
   const letzte = endgueltigeZiehungen
-    .filter((z) => z.quoten?.lotto)
+    .filter((z) => z.quoten?.[spiel.id])
     .sort((a, b) => b.date.localeCompare(a.date))
     .slice(0, anzahl);
   const out = {};
-  for (let klasse = 3; klasse <= 8; klasse += 1) {
-    const werte = letzte.map((z) => Number(z.quoten.lotto[klasse])).filter((v) => v > 0).sort((a, b) => a - b);
+  for (let klasse = spiel.schaetzung.von; klasse <= spiel.schaetzung.bis; klasse += 1) {
+    const werte = letzte.map((z) => Number(z.quoten[spiel.id][klasse])).filter((v) => v > 0).sort((a, b) => a - b);
     if (!werte.length) continue;
     const mitte = Math.floor(werte.length / 2);
     out[klasse] = round2(werte.length % 2 ? werte[mitte] : (werte[mitte - 1] + werte[mitte]) / 2);
@@ -187,16 +228,17 @@ export function scheinFuer(scheine, datum) {
  * Baut die Abrechnung: eine Zeile je Samstag seit Start, dazu Summen und Anteile je Spieler.
  * Kosten fallen ab dem Spieltag an, auch wenn die Ziehung noch nicht in der Datenbank ist.
  */
-export function baueAbrechnung({ ziehungen, scheine, startDatum, heute, korrekturen = [], spieler = [] }) {
-  const samstage = ziehungen.filter((z) => z.serie === SERIE && z.date >= startDatum && z.date <= heute);
+export function baueAbrechnung({ ziehungen, scheine, startDatum, heute, korrekturen = [], spieler = [], spiel = SPIELE.lotto }) {
+  const samstage = ziehungen.filter((z) => z.serie === spiel.serie && z.date >= startDatum && z.date <= heute);
   const nachDatum = new Map(samstage.map((z) => [z.date, z]));
-  const schaetzung = schaetzeQuoten(samstage.filter((z) => z.quoten));
+  const schaetzung = schaetzeQuoten(samstage.filter((z) => z.quoten), 8, spiel);
 
-  // Kalender-Samstage ohne Ziehung (heute noch nicht gezogen); Wochen mit verschobener Ziehung nicht doppelt zählen
-  const wochen = new Set(samstage.map((z) => letzterSamstag(addDays(z.date, 3))));
+  // Kalendertage (Samstag, bei Eurojackpot Freitag) ohne Ziehung, etwa heute vor der Ziehung. Wochen mit verschobener
+  // Ziehung nicht doppelt zählen
+  const wochen = new Set(samstage.map((z) => letzterWochentag(addDays(z.date, 3), spiel.wochentag)));
   const termine = [...nachDatum.keys()];
-  for (const sa of samstageZwischen(startDatum, heute)) {
-    if (!nachDatum.has(sa) && !wochen.has(sa)) termine.push(sa);
+  for (const tag of tageZwischen(startDatum, heute, spiel.wochentag)) {
+    if (!nachDatum.has(tag) && !wochen.has(tag)) termine.push(tag);
   }
   termine.sort();
 
@@ -205,7 +247,7 @@ export function baueAbrechnung({ ziehungen, scheine, startDatum, heute, korrektu
     const schein = scheinFuer(scheine, datum);
     const ziehung = nachDatum.get(datum) ?? null;
     const kosten = schein?.kosten ?? 0;
-    const auswertung = ziehung && schein ? werteZiehungAus(ziehung, schein, schaetzung) : null;
+    const auswertung = ziehung && schein ? werteZiehungAus(ziehung, schein, schaetzung, spiel) : null;
     const gewinn = auswertung?.gewinn ?? 0;
     saldo = round2(saldo + gewinn - kosten);
     return {
@@ -220,6 +262,7 @@ export function baueAbrechnung({ ziehungen, scheine, startDatum, heute, korrektu
       ziehung: ziehung && {
         nums: [...ziehung.nums].sort((a, b) => a - b),
         sz: ziehung.sz,
+        euro: ziehung.euro ? [...ziehung.euro].sort((a, b) => a - b) : null,
         spiel77: ziehung.spiel77,
         super6: ziehung.super6,
         quelle: ziehung.quelle,

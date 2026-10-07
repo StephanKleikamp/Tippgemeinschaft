@@ -125,8 +125,29 @@ $('knopf-abruf').addEventListener('click', () => starteAbruf(false));
 
 // ---- Darstellung ----
 
+// ---- Spiel (6aus49 oder Eurojackpot): Beschriftungen und Eingabemasken ----
+
+const FELD_BUCHSTABEN = 'ABCDEFGHIJKL';
+
+function wendeSpielAn(sp) {
+  document.title = sp.seitentitel;
+  for (const praefix of ['anmelde', 'marke']) {
+    $(`${praefix}-symbol`).textContent = sp.symbol;
+    $(`${praefix}-titel`).textContent = sp.titel;
+    $(`${praefix}-untertitel`).textContent = sp.untertitel;
+  }
+  $('einst-start-label').textContent = `Erster Spieltag (${sp.serie})`;
+  // Scheinnummer, Spiel 77 und Super 6 gibt es nur bei 6aus49
+  for (const id of ['schein-losnummer-zeile', 'schein-haken', 'schein-zusatz-hinweis', 'k-spiel77-zeile', 'k-super6-zeile']) $(id).hidden = !sp.zusatz;
+  $('k-lotto-label').textContent = `${sp.spalten[0].label} (€)`;
+  const { zahlen, max, extra } = sp.feld;
+  $('schein-kopf-zahlen').textContent = `${zahlen} Zahlen (1–${max}), mit Leerzeichen getrennt`;
+  $('schein-kopf-extra').textContent = extra.art === 'euro' ? `Eurozahlen (${extra.min}–${extra.max})` : 'SZ';
+}
+
 function render() {
   if (!z) return;
+  wendeSpielAn(z.spiel);
   // Einstellungen, Passwörter, Tippschein und Korrekturbuchungen ändert nur der Admin, der Server prüft das ebenfalls
   const admin = z.rolle === 'admin';
   $('knopf-einstellungen').hidden = !admin;
@@ -185,6 +206,16 @@ function kugeln(nums, { gezogen = false, treffer = [] } = {}) {
   return nums.map((n) => `<span class="kugel${gezogen ? ' gezogen-kugel' : ''}${treffer.includes(n) ? ' treffer' : ''}" aria-label="${n}${treffer.includes(n) ? ', Treffer' : ''}">${n}</span>`).join('');
 }
 
+/** Eurozahlen (goldene Kugeln) beziehungsweise bei 6aus49 die Superzahl (violett). */
+function zusatzKugeln(zahlen, { gezogen = false, treffer = [], euro = false } = {}) {
+  return zahlen.map((n) => {
+    const hit = treffer.includes(n);
+    const art = euro ? `euro${hit ? ' treffer' : ''}` : `sz${hit ? ' treffer' : ''}`;
+    const label = `${euro ? 'Eurozahl' : 'Superzahl'} ${n}${hit ? ', Treffer' : ''}`;
+    return `<span class="kugel${gezogen ? ' gezogen-kugel' : ''} ${art}" aria-label="${label}">${n}</span>`;
+  }).join('');
+}
+
 function ziffern(text, { ab = Infinity, klasse = '' } = {}) {
   return [...text].map((c, i) => `<span class="ziffer ${klasse}${i >= ab ? ' richtig' : ''}">${c}</span>`).join('');
 }
@@ -208,7 +239,9 @@ function statusMarke(r) {
 }
 
 function ergebnisFeld(f) {
-  const richtige = `${f.treffer.length} Treffer${f.szTreffer ? ' + SZ' : ''}`;
+  const richtige = f.euro
+    ? `${f.treffer.length} Treffer + ${f.euroTreffer.length} ${f.euroTreffer.length === 1 ? 'Eurozahl' : 'Eurozahlen'}`
+    : `${f.treffer.length} Treffer${f.szTreffer ? ' + SZ' : ''}`;
   if (!f.klasse) return `<span>${richtige} · kein Gewinn</span>`;
   if (f.betrag !== null) return `<span class="betrag">${fe(f.betrag)}</span><span class="klasse">${richtige} · Klasse ${f.klasse}</span>`;
   const schaetzung = f.geschaetzt ? `≈ ${fe(f.geschaetzt)}` : 'Betrag offen';
@@ -264,17 +297,17 @@ function renderAbgleich() {
     const felder = a.lotto.felder.map((f) => `
       <div class="feld ${f.klasse ? 'gewinn' : 'kein'}">
         <span class="feld-name">${f.label}</span>
-        <span class="feld-zahlen">${kugeln(f.nums, { treffer: f.treffer })}<span class="trenner-sz">|</span><span class="kugel sz${f.szTreffer ? ' treffer' : ''}" aria-label="Superzahl ${f.sz}${f.szTreffer ? ', Treffer' : ''}">${f.sz}</span></span>
+        <span class="feld-zahlen">${kugeln(f.nums, { treffer: f.treffer })}<span class="trenner-sz">|</span>${f.euro ? zusatzKugeln(f.euro, { treffer: f.euroTreffer, euro: true }) : zusatzKugeln([f.sz], { treffer: f.szTreffer ? [f.sz] : [] })}</span>
         <span class="ergebnis">${ergebnisFeld(f)}</span>
       </div>`).join('');
     const noch = a.offen ? ` · <span class="warnung">+ ${a.geschaetzt ? `ca. ${fe(a.geschaetzt)}` : 'Betrag'} offen</span>` : '';
     koerper = `
       <div class="abgleich-quelle">${quelleHtml(r, !zeilen.some((x) => x.ziehung && x.datum > r.datum))}</div>
       <div class="gezogen">
-        <div class="gezogen-gruppe"><span class="gezogen-name">6aus49</span>${kugeln(r.ziehung.nums, { gezogen: true })}<span class="kugel gezogen-kugel sz" aria-label="Superzahl ${r.ziehung.sz}">${r.ziehung.sz}</span></div>
+        <div class="gezogen-gruppe"><span class="gezogen-name">${esc(z.spiel.name)}</span>${kugeln(r.ziehung.nums, { gezogen: true })}${r.ziehung.euro ? zusatzKugeln(r.ziehung.euro, { gezogen: true, euro: true }) : zusatzKugeln([r.ziehung.sz], { gezogen: true })}</div>
       </div>
       <div class="tippschein">
-        <div class="tippschein-titel">Euer Tippschein · 6aus49</div>
+        <div class="tippschein-titel">Euer Tippschein · ${esc(z.spiel.name)}</div>
         ${felder}
         ${a.spiel77 || a.super6 ? '<div class="tippschein-titel">Zusatzlotterien</div>' : ''}
         ${zusatzHtml('Spiel 77', a.spiel77, 7)}
@@ -342,23 +375,28 @@ function renderVerlauf() {
   $('verlauf-zahl').innerHTML = alle.length
     ? `${alle.length} ${plural(alle.length, 'Spieltag', 'Spieltage')}${kuerzbar ? ` · <button class="btn sekundaer klein" type="button" id="verlauf-umschalten">${verlaufAlle ? 'Weniger anzeigen' : 'Alle anzeigen'}</button>` : ''}`
     : '';
-  const kopf = '<thead><tr><th>Datum</th><th>Gezogen</th><th class="zahl">6aus49</th><th class="zahl">Spiel 77</th><th class="zahl">Super 6</th><th class="zahl">Gewinn</th><th class="zahl">Einsatz</th><th class="zahl">Bilanz</th></tr></thead>';
+  const spalten = z.spiel.spalten;
+  const kopf = `<thead><tr><th>Datum</th><th>Gezogen</th>${spalten.map((sp) => `<th class="zahl">${esc(sp.label)}</th>`).join('')}<th class="zahl">Gewinn</th><th class="zahl">Einsatz</th><th class="zahl">Bilanz</th></tr></thead>`;
   if (!zeilen.length) {
-    $('verlauf-tabelle').innerHTML = `${kopf}<tbody><tr><td class="leer" colspan="8">Noch keine Spieltage.</td></tr></tbody>`;
+    $('verlauf-tabelle').innerHTML = `${kopf}<tbody><tr><td class="leer" colspan="${5 + spalten.length}">Noch keine Spieltage.</td></tr></tbody>`;
     return;
   }
+  const keine = '<span class="grau">–</span>';
+  const zelle = {
+    lotto: (a, offen) => (a ? betragZelle(a.gewinnLotto, offen) : keine),
+    spiel77: (a) => (a?.spiel77 ? betragZelle(a.gewinnSpiel77, a.spiel77.offen) : keine),
+    super6: (a) => (a?.super6 ? betragZelle(a.gewinnSuper6, a.super6.offen) : keine),
+  };
   $('verlauf-tabelle').innerHTML = `${kopf}<tbody>${zeilen.map((r) => {
     const a = r.auswertung;
     const offenLotto = a ? a.lotto.felder.some((f) => f.offen) : false;
     const gezogen = r.ziehung
-      ? `<span class="mini-zahlen"><b>${r.ziehung.nums.join(' ')}</b> · SZ ${r.ziehung.sz}</span>`
+      ? `<span class="mini-zahlen"><b>${r.ziehung.nums.join(' ')}</b> · ${r.ziehung.euro ? `Euro ${r.ziehung.euro.join(' ')}` : `SZ ${r.ziehung.sz}`}</span>`
       : '<span class="grau">steht aus</span>';
     return `<tr class="klickbar${r.datum === gewaehlt ? ' gewaehlt' : ''}" data-datum="${r.datum}" tabindex="0">
       <td class="nowrap">${datumLang(r.datum)}<br>${statusMarke(r)}</td>
       <td>${gezogen}</td>
-      <td class="zahl">${a ? betragZelle(a.gewinnLotto, offenLotto) : '<span class="grau">–</span>'}</td>
-      <td class="zahl">${a?.spiel77 ? betragZelle(a.gewinnSpiel77, a.spiel77.offen) : '<span class="grau">–</span>'}</td>
-      <td class="zahl">${a?.super6 ? betragZelle(a.gewinnSuper6, a.super6.offen) : '<span class="grau">–</span>'}</td>
+      ${spalten.map((sp) => `<td class="zahl">${zelle[sp.schluessel](a, offenLotto)}</td>`).join('')}
       <td class="zahl"><strong>${r.gewinn ? fe(r.gewinn) : '–'}</strong></td>
       <td class="zahl rot">${fe(r.kosten)}</td>
       <td class="zahl ${r.saldo >= 0 ? 'gruen' : 'rot'}"><strong>${fe(r.saldo)}</strong></td>
@@ -388,15 +426,16 @@ $('verlauf-tabelle').addEventListener('keydown', (e) => {
 
 function renderKorrekturen() {
   const admin = z.rolle === 'admin';
-  const kopf = `<thead><tr><th>Datum</th><th class="zahl">6aus49</th><th class="zahl">Spiel 77</th><th class="zahl">Super 6</th><th>Notiz</th>${admin ? '<th></th>' : ''}</tr></thead>`;
+  const spalten = z.spiel.spalten;
+  const kopf = `<thead><tr><th>Datum</th>${spalten.map((sp) => `<th class="zahl">${esc(sp.label)}</th>`).join('')}<th>Notiz</th>${admin ? '<th></th>' : ''}</tr></thead>`;
   const k = z.korrekturen;
   if (!k.length) {
-    $('korrektur-tabelle').innerHTML = `${kopf}<tbody><tr><td class="leer" colspan="${admin ? 6 : 5}">Keine Korrekturen.</td></tr></tbody>`;
+    $('korrektur-tabelle').innerHTML = `${kopf}<tbody><tr><td class="leer" colspan="${spalten.length + 2 + (admin ? 1 : 0)}">Keine Korrekturen.</td></tr></tbody>`;
     return;
   }
   const betrag = (n) => (n ? `<span class="${n > 0 ? 'gruen' : 'rot'}">${fe(n)}</span>` : '<span class="grau">–</span>');
   $('korrektur-tabelle').innerHTML = `${kopf}<tbody>${k.map((x) => `<tr>
-    <td class="nowrap">${datumKurz(x.datum)}</td><td class="zahl">${betrag(x.lotto)}</td><td class="zahl">${betrag(x.spiel77)}</td><td class="zahl">${betrag(x.super6)}</td>
+    <td class="nowrap">${datumKurz(x.datum)}</td>${spalten.map((sp) => `<td class="zahl">${betrag(x[sp.schluessel])}</td>`).join('')}
     <td class="grau">${esc(x.notiz)}</td>
     ${admin ? `<td class="zahl"><button class="btn symbol" type="button" data-loeschen="${x.id}" aria-label="Buchung löschen">✕</button></td>` : ''}</tr>`).join('')}</tbody>`;
 }
@@ -426,11 +465,18 @@ document.querySelectorAll('dialog').forEach((d) => {
 let scheinWahl = 'neu';
 
 function scheinFelderZeichnen(felder) {
-  $('schein-felder').innerHTML = Array.from({ length: 8 }, (_, i) => {
-    const f = felder[i] ?? { nums: [], sz: null };
-    return `<tr><td class="feld-nr">${'ABCDEFGH'[i]}</td>
-      <td><input type="text" id="sf-nums-${i}" value="${f.nums.join(' ')}" placeholder="z. B. 3 10 16 20 30 41" autocomplete="off" aria-label="Feld ${'ABCDEFGH'[i]}, Zahlen"></td>
-      <td><input type="number" class="sz-eingabe" id="sf-sz-${i}" min="0" max="9" value="${f.sz ?? ''}" placeholder="0–9" aria-label="Feld ${'ABCDEFGH'[i]}, Superzahl"></td></tr>`;
+  const sp = z.spiel;
+  const euro = sp.feld.extra.art === 'euro';
+  const beispiel = euro ? 'z. B. 3 10 16 20 30' : 'z. B. 3 10 16 20 30 41';
+  $('schein-felder').innerHTML = Array.from({ length: sp.felder }, (_, i) => {
+    const f = felder[i] ?? { nums: [], sz: null, euro: [] };
+    const name = `Feld ${FELD_BUCHSTABEN[i]}`;
+    const extra = euro
+      ? `<input type="text" class="euro-eingabe" id="sf-euro-${i}" value="${(f.euro ?? []).join(' ')}" placeholder="z. B. 2 9" autocomplete="off" aria-label="${name}, Eurozahlen">`
+      : `<input type="number" class="sz-eingabe" id="sf-sz-${i}" min="0" max="9" value="${f.sz ?? ''}" placeholder="0–9" aria-label="${name}, Superzahl">`;
+    return `<tr><td class="feld-nr">${FELD_BUCHSTABEN[i]}</td>
+      <td><input type="text" id="sf-nums-${i}" value="${f.nums.join(' ')}" placeholder="${beispiel}" autocomplete="off" aria-label="${name}, Zahlen"></td>
+      <td>${extra}</td></tr>`;
   }).join('');
 }
 
@@ -442,7 +488,7 @@ function scheinFuellen(wahl) {
   scheinFelderZeichnen(vorlage?.felder ?? []);
   $('schein-ab').value = vorhanden ? vorhanden.gueltigAb : (z.scheine.length ? z.naechsterSpieltag : z.einstellungen.startDatum);
   $('schein-losnummer').value = vorlage?.losnummer ?? '';
-  $('schein-kosten').value = vorlage?.kosten ?? 13.35;
+  $('schein-kosten').value = vorlage?.kosten ?? z.spiel.kosten;
   $('schein-spiel77').checked = vorlage?.spiel77 ?? true;
   $('schein-super6').checked = vorlage?.super6 ?? true;
   $('schein-loeschen').hidden = !vorhanden;
@@ -466,18 +512,21 @@ $('knopf-schein').addEventListener('click', oeffneSchein);
 $('schein-auswahl').addEventListener('change', (e) => scheinFuellen(e.target.value));
 
 function scheinLesen() {
-  const felder = Array.from({ length: 8 }, (_, i) => {
-    const text = $(`sf-nums-${i}`).value.trim();
+  const euro = z.spiel.feld.extra.art === 'euro';
+  const zahlen = (text) => (text.trim() ? text.split(/[^0-9]+/).filter(Boolean).map(Number) : []);
+  const felder = Array.from({ length: z.spiel.felder }, (_, i) => {
+    const nums = zahlen($(`sf-nums-${i}`).value);
+    if (euro) return { nums, euro: zahlen($(`sf-euro-${i}`).value) };
     const sz = $(`sf-sz-${i}`).value.trim();
-    return { nums: text ? text.split(/[^0-9]+/).filter(Boolean).map(Number) : [], sz: sz === '' ? null : Number(sz) };
+    return { nums, sz: sz === '' ? null : Number(sz) };
   });
   return {
     gueltigAb: $('schein-ab').value,
     felder,
     losnummer: $('schein-losnummer').value,
     kosten: Number($('schein-kosten').value),
-    spiel77: $('schein-spiel77').checked,
-    super6: $('schein-super6').checked,
+    spiel77: z.spiel.zusatz && $('schein-spiel77').checked,
+    super6: z.spiel.zusatz && $('schein-super6').checked,
   };
 }
 
@@ -596,6 +645,8 @@ $('korrektur-formular').addEventListener('submit', async (e) => {
 // ---- Start ----
 
 (async () => {
+  // Welches Spiel diese Instanz rechnet, damit schon das Anmeldeformular passend beschriftet ist
+  await api('GET', '/api/spiel').then(wendeSpielAn).catch(() => {});
   try {
     const { angemeldet } = await api('GET', '/api/sitzung');
     if (angemeldet) await zeigeApp();

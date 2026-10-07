@@ -1,18 +1,21 @@
 /**
  * Datenquellen für Ziehungen und Quoten. Jede Quelle liefert dasselbe Format:
- *   { date, serie, nums[6], sz, spiel77, super6, quoten | null, quelle }
+ *   6aus49:      { date, serie, nums[6], sz, spiel77, super6, quoten | null, quelle }
+ *   Eurojackpot: { date, serie, nums[5], euro[2], sz: null, spiel77: null, super6: null, quoten | null, quelle }
  * `quoten` ist nur gesetzt, wenn die Gewinnquoten vollständig veröffentlicht sind
- * ({ lotto: {1..9}, spiel77: {1..7}, super6: {1..6} }). Sonst gilt die Ziehung als vorläufig.
+ * ({ lotto: {1..9}, spiel77: {1..7}, super6: {1..6} } beziehungsweise { eurojackpot: {1..12} }).
+ * Sonst gilt die Ziehung als vorläufig.
  *
  *  1. lotto.de (Schnittstelle der Webseite): Zahlen und Quoten jeder Ziehung, auch rückwirkend.
  *  2. Lotto Hessen (services.lotto-hessen.de): nur die letzte Ziehung, dient zur Gegenprüfung
  *     und als Ersatz, falls lotto.de ausfällt.
- *  3. LottoNumberArchive (GitHub Pages): alle Zahlen seit 1955, aber ohne Quoten.
+ *  3. LottoNumberArchive (GitHub Pages, nur 6aus49): alle Zahlen seit 1955, aber ohne Quoten.
  */
 import { FEST, SERIE, isoWeekday } from './rules.js';
+import { SPIELE } from './spiele.js';
 
 const USER_AGENT = 'Tippgemeinschaft/2.0 (private Gruppen-App, ruft nur oeffentliche Gewinnzahlen ab)';
-const LOTTO_DE = 'https://www.lotto.de/api/stats/entities.lotto';
+const LOTTO_DE = 'https://www.lotto.de/api/stats';
 const HESSEN = 'https://services.lotto-hessen.de/spielinformationen';
 const ARCHIV = 'https://johannesfriedrich.github.io/LottoNumberArchive/Lottonumbers_complete.json';
 
@@ -88,6 +91,33 @@ export function normalisiereLottoDe(json) {
   };
 }
 
+/** Eurojackpot bei lotto.de: Zahlen mit `drawNumberType` 0, Eurozahlen mit Typ 1, zwölf Gewinnklassen. */
+export function normalisiereLottoDeEuro(json) {
+  const d = Array.isArray(json) ? json[0] : json;
+  if (!d || typeof d !== 'object') return null;
+  const sortiert = (typ) => (d.drawNumbersCollection ?? []).filter((x) => x.drawNumberType === typ).sort((a, b) => a.index - b.index).map((x) => x.drawNumber);
+  const nums = sortiert(0);
+  const euro = sortiert(1);
+  const gueltig = nums.length === 5 && new Set(nums).size === 5 && nums.every((n) => Number.isInteger(n) && n >= 1 && n <= 50)
+    && euro.length === 2 && new Set(euro).size === 2 && euro.every((n) => Number.isInteger(n) && n >= 1 && n <= 12);
+  if (!gueltig || !Number.isFinite(d.drawDate)) return null;
+
+  const name = String(d.gameType?.name ?? '');
+  const quoten = { eurojackpot: quotenMap(d.oddsCollection, 12) };
+  return {
+    date: berlinDatum(d.drawDate),
+    serie: /dienstag/i.test(name) ? 'Dienstag' : 'Freitag', // freitags heißt das Spiel nur „Eurojackpot“
+    nums,
+    euro,
+    sz: null,
+    spiel77: null,
+    super6: null,
+    // Klasse 12 (2 Richtige + 1 Eurozahl) hat nach jeder Ziehung Gewinner. Ist sie leer, sind die Quoten noch nicht berechnet.
+    quoten: quoten.eurojackpot && quoten.eurojackpot[12] > 0 ? quoten : null,
+    quelle: 'lotto.de',
+  };
+}
+
 // ---- Lotto Hessen ----
 
 export function normalisiereHessen({ zahlen, quoten, super6, spiel77, spiel77Quoten }) {
@@ -117,6 +147,36 @@ export function normalisiereHessen({ zahlen, quoten, super6, spiel77, spiel77Quo
     spiel77: nummer(spiel77, 7),
     super6: nummer(super6, 6),
     quoten: vollstaendig(alle) ? alle : null,
+    quelle: 'lotto-hessen',
+  };
+}
+
+export function normalisiereHessenEuro({ zahlen, quoten }) {
+  const datum = deZuIso(zahlen?.Datum);
+  const nums = zahlen?.Zahl;
+  const euro = zahlen?.Eurozahl;
+  if (!datum || !Array.isArray(nums) || nums.length !== 5 || new Set(nums).size !== 5
+    || !nums.every((n) => Number.isInteger(n) && n >= 1 && n <= 50)
+    || !Array.isArray(euro) || euro.length !== 2 || new Set(euro).size !== 2 || !euro.every((n) => Number.isInteger(n) && n >= 1 && n <= 12)) return null;
+
+  let klassen = null;
+  if (deZuIso(quoten?.Datum) === datum) {
+    klassen = {};
+    for (let k = 1; k <= 12; k += 1) {
+      const wert = Number(quoten[`Gewinnklasse${k}`]);
+      if (!Number.isFinite(wert)) { klassen = null; break; }
+      klassen[k] = wert;
+    }
+  }
+  return {
+    date: datum,
+    serie: /dienstag/i.test(zahlen.Ziehung) ? 'Dienstag' : 'Freitag',
+    nums,
+    euro,
+    sz: null,
+    spiel77: null,
+    super6: null,
+    quoten: klassen && klassen[12] > 0 ? { eurojackpot: klassen } : null,
     quelle: 'lotto-hessen',
   };
 }
@@ -163,24 +223,35 @@ async function holeJson(url, { timeoutMs = 20000, fetchImpl = fetch } = {}) {
 
 const mitternachtUtc = (iso) => Date.parse(`${iso}T00:00:00Z`);
 
-/** Alle Quellen hinter einer Schnittstelle, damit Tests sie ersetzen können. */
-export function erstelleQuellen({ fetchImpl = fetch } = {}) {
+/** Alle Quellen eines Spiels hinter einer Schnittstelle, damit Tests sie ersetzen können. */
+export function erstelleQuellen({ fetchImpl = fetch, spiel = SPIELE.lotto } = {}) {
   const hole = (url, optionen) => holeJson(url, { ...optionen, fetchImpl });
+  const lottoDe = `${LOTTO_DE}/${spiel.lottoDe.entitaet}`;
+  const euro = spiel.id === 'eurojackpot';
   return {
     /** Alle Ziehungstage eines Jahres als ISO-Datum, neueste zuerst. */
     async lottoDeTage(jahr) {
-      const json = await hole(`${LOTTO_DE}/history/${mitternachtUtc(`${jahr}-12-31`)}`);
+      const json = await hole(`${lottoDe}/history/${mitternachtUtc(`${jahr}-12-31`)}`);
       const tage = (json?.days ?? []).map((t) => t.date).filter((t) => /^\d{4}-\d{2}-\d{2}$/.test(t));
       if (!tage.length) throw new Error('lotto.de: keine Ziehungstage');
       return tage;
     },
     async lottoDeZiehung(datum) {
-      const json = await hole(`${LOTTO_DE}/draws/${mitternachtUtc(datum)}`);
-      const ziehung = normalisiereLottoDe(json);
+      const json = await hole(`${lottoDe}/${spiel.lottoDe.ziehung}/${mitternachtUtc(datum)}`);
+      const ziehung = euro ? normalisiereLottoDeEuro(json) : normalisiereLottoDe(json);
       if (!ziehung) throw new Error(`lotto.de: Ziehung ${datum} unvollständig`);
       return ziehung;
     },
     async hessenLetzte() {
+      if (euro) {
+        const [zahlen, quoten] = await Promise.all([
+          hole(`${HESSEN}/gewinnzahlen/${spiel.hessen}`),
+          hole(`${HESSEN}/quoten/${spiel.hessen}`).catch(() => null),
+        ]);
+        const ziehung = normalisiereHessenEuro({ zahlen, quoten });
+        if (!ziehung) throw new Error('lotto-hessen: Antwort unvollständig');
+        return ziehung;
+      }
       const [zahlen, quoten, super6, spiel77, spiel77Quoten] = await Promise.all([
         hole(`${HESSEN}/gewinnzahlen/lotto`),
         hole(`${HESSEN}/quoten/lotto`).catch(() => null),
@@ -192,7 +263,9 @@ export function erstelleQuellen({ fetchImpl = fetch } = {}) {
       if (!ziehung) throw new Error('lotto-hessen: Antwort unvollständig');
       return ziehung;
     },
+    /** Nur für 6aus49 gibt es ein Archiv, für Eurojackpot bleibt diese Quelle leer. */
     async archiv(ab) {
+      if (euro) return [];
       return normalisiereArchiv(await hole(ARCHIV, { timeoutMs: 40000 }), ab);
     },
   };

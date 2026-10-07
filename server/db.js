@@ -32,10 +32,10 @@ export const sha256 = (value) => crypto.createHash('sha256').update(value).diges
 
 // ---- Schema ----
 
-export const STANDARD_START = '2026-01-03';
-export const ANZAHL_FELDER = 8;
+import { SPIELE, leeresFeld } from './spiele.js';
 
-export function oeffneDatenbank(datei) {
+/** `standard` ({ spieler, startDatum }) bestimmt nur die Vorgaben einer neuen Datenbank, vorhandene Werte bleiben. */
+export function oeffneDatenbank(datei, standard = SPIELE.lotto) {
   if (datei !== ':memory:') fs.mkdirSync(path.dirname(datei), { recursive: true });
   const db = new DatabaseSync(datei);
   db.exec(`
@@ -64,7 +64,8 @@ export function oeffneDatenbank(datei) {
       datum TEXT PRIMARY KEY,
       serie TEXT NOT NULL,
       nums TEXT NOT NULL,
-      sz INTEGER NOT NULL,
+      sz INTEGER,
+      euro TEXT,
       spiel77 TEXT,
       super6 TEXT,
       quoten TEXT,
@@ -97,24 +98,32 @@ export function oeffneDatenbank(datei) {
   // Bestehende Sitzungen werden dabei zu Mitglieds-Sitzungen (geringste Rechte).
   const hatSpalte = (tabelle, spalte) => db.prepare(`PRAGMA table_info(${tabelle})`).all().some((c) => c.name === spalte);
   if (!hatSpalte('einstellungen', 'admin_hash')) db.exec('ALTER TABLE einstellungen ADD COLUMN admin_hash TEXT');
+  if (!hatSpalte('ziehungen', 'euro')) db.exec('ALTER TABLE ziehungen ADD COLUMN euro TEXT');
   if (!hatSpalte('sitzungen', 'rolle')) db.exec("ALTER TABLE sitzungen ADD COLUMN rolle TEXT NOT NULL DEFAULT 'mitglied'");
   db.prepare(
     `INSERT OR IGNORE INTO einstellungen (id, spieler, start_datum) VALUES (1, ?, ?)`
-  ).run(JSON.stringify(['Spieler 1', 'Spieler 2', 'Spieler 3']), STANDARD_START);
+  ).run(JSON.stringify(standard.spieler), standard.startDatum);
   return db;
 }
 
 // ---- Zugriffe ----
 
-const feldAuffuellen = (felder) => {
-  const out = Array.from({ length: ANZAHL_FELDER }, (_, i) => felder?.[i] ?? { nums: [], sz: null });
-  return out.map((f) => ({ nums: f.nums ?? [], sz: Number.isInteger(f.sz) ? f.sz : null }));
+/** Füllt die Spielfelder eines Scheins auf die feste Zahl der Zeilen auf und bringt sie in die Form des Spiels. */
+const feldAuffuellen = (felder, spiel) => {
+  const leer = leeresFeld(spiel);
+  const euro = spiel.feld.extra.art === 'euro';
+  return Array.from({ length: spiel.felder }, (_, i) => {
+    const f = felder?.[i] ?? leer;
+    return euro
+      ? { nums: f.nums ?? [], euro: f.euro ?? [] }
+      : { nums: f.nums ?? [], sz: Number.isInteger(f.sz) ? f.sz : null };
+  });
 };
 
-const scheinZeile = (r) => ({
+const scheinZeile = (r, spiel) => ({
   id: r.id,
   gueltigAb: r.gueltig_ab,
-  felder: feldAuffuellen(JSON.parse(r.felder)),
+  felder: feldAuffuellen(JSON.parse(r.felder), spiel),
   losnummer: r.losnummer,
   kosten: r.kosten,
   spiel77: r.spiel77 === 1,
@@ -126,6 +135,7 @@ const ziehungZeile = (r) => ({
   serie: r.serie,
   nums: JSON.parse(r.nums),
   sz: r.sz,
+  euro: r.euro ? JSON.parse(r.euro) : null,
   spiel77: r.spiel77,
   super6: r.super6,
   quoten: r.quoten ? JSON.parse(r.quoten) : null,
@@ -134,7 +144,7 @@ const ziehungZeile = (r) => ({
   abgerufenAm: r.abgerufen_am,
 });
 
-export function erstelleStore(db) {
+export function erstelleStore(db, spiel = SPIELE.lotto) {
   const q = (sql) => db.prepare(sql);
   return {
     db,
@@ -170,11 +180,11 @@ export function erstelleStore(db) {
     },
 
     scheine() {
-      return q('SELECT * FROM scheine ORDER BY gueltig_ab, id').all().map(scheinZeile);
+      return q('SELECT * FROM scheine ORDER BY gueltig_ab, id').all().map((r) => scheinZeile(r, spiel));
     },
     schein(id) {
       const r = q('SELECT * FROM scheine WHERE id = ?').get(id);
-      return r ? scheinZeile(r) : null;
+      return r ? scheinZeile(r, spiel) : null;
     },
     legeScheinAn(s) {
       const r = q('INSERT INTO scheine (gueltig_ab, felder, losnummer, kosten, spiel77, super6) VALUES (?, ?, ?, ?, ?, ?)')
@@ -197,12 +207,12 @@ export function erstelleStore(db) {
       return r ? ziehungZeile(r) : null;
     },
     speichereZiehung(z, jetzt) {
-      q(`INSERT INTO ziehungen (datum, serie, nums, sz, spiel77, super6, quoten, quelle, geprueft, abgerufen_am)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-         ON CONFLICT(datum) DO UPDATE SET serie = excluded.serie, nums = excluded.nums, sz = excluded.sz,
+      q(`INSERT INTO ziehungen (datum, serie, nums, sz, euro, spiel77, super6, quoten, quelle, geprueft, abgerufen_am)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT(datum) DO UPDATE SET serie = excluded.serie, nums = excluded.nums, sz = excluded.sz, euro = excluded.euro,
            spiel77 = excluded.spiel77, super6 = excluded.super6, quoten = excluded.quoten, quelle = excluded.quelle,
            geprueft = excluded.geprueft, abgerufen_am = excluded.abgerufen_am`)
-        .run(z.date, z.serie, JSON.stringify(z.nums), z.sz, z.spiel77 ?? null, z.super6 ?? null,
+        .run(z.date, z.serie, JSON.stringify(z.nums), z.sz ?? null, z.euro ? JSON.stringify(z.euro) : null, z.spiel77 ?? null, z.super6 ?? null,
           z.quoten ? JSON.stringify(z.quoten) : null, z.quelle, z.geprueft ?? null, jetzt);
     },
 

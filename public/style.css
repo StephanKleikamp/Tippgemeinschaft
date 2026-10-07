@@ -129,6 +129,9 @@ td.leer { text-align: center; padding: 26px; color: var(--gedaempft); }
 .kugel.gezogen-kugel { background: var(--schiefer); border-color: var(--schiefer); color: #fff; }
 .kugel.sz { border-color: var(--sz); color: var(--sz); }
 .kugel.gezogen-kugel.sz { background: var(--sz); border-color: var(--sz); color: #fff; }
+.kugel.euro { border-color: #c9951a; color: #8a6410; background: #fff8e6; }
+.kugel.gezogen-kugel.euro { background: #c9951a; border-color: #c9951a; color: #fff; }
+.kugel.euro.treffer { background: #c9951a; border-color: #c9951a; color: #fff; }
 .kugel.treffer { background: var(--primaer-dunkel); border-color: var(--primaer-dunkel); color: #fff; }
 .kugel.sz.treffer { background: var(--sz); border-color: var(--sz); color: #fff; }
 
@@ -185,6 +188,7 @@ input[type=text], input[type=number], input[type=date], input[type=password], se
 .felder-tabelle td { padding: 5px 6px; }
 .felder-tabelle .feld-nr { font-weight: 700; color: var(--gedaempft); width: 40px; }
 .felder-tabelle input.sz-eingabe { width: 64px; text-align: center; border-color: #c39bd3; background: var(--sz-hell); }
+.felder-tabelle input.euro-eingabe { width: 96px; text-align: center; border-color: #e0c27a; background: #fff8e6; }
 
 /* ---- Toast ---- */
 .toast { position: fixed; left: 50%; bottom: 22px; transform: translate(-50%, 20px); background: var(--schiefer); color: #fff; padding: 11px 18px; border-radius: 10px; font-size: 0.88rem; font-weight: 600; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25); opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.2s; max-width: calc(100vw - 32px); z-index: 50; }

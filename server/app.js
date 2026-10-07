@@ -5,9 +5,10 @@
  */
 import crypto from 'node:crypto';
 import express from 'express';
-import { hashPassword, verifyPassword, sha256, ANZAHL_FELDER } from './db.js';
+import { hashPassword, verifyPassword, sha256 } from './db.js';
 import { baueAbrechnung } from './rules.js';
 import { berlinHeute, naechsterSpieltag } from './sync.js';
+import { SPIELE, leeresFeld, oeffentlich } from './spiele.js';
 
 const COOKIE = 'tipp_session';
 const SITZUNG_TAGE = 30;
@@ -27,24 +28,37 @@ const runden = (n) => Math.round(n * 100) / 100;
 
 // ---- Eingaben prüfen ----
 
-export function pruefeSchein(body) {
+export function pruefeSchein(body, spiel = SPIELE.lotto) {
+  const { zahlen, max, extra } = spiel.feld;
+  const euro = extra.art === 'euro';
   if (!istDatum(body?.gueltigAb)) ungueltig('Bitte ein gültiges Datum „gilt ab“ angeben.');
-  if (!Array.isArray(body.felder) || body.felder.length > ANZAHL_FELDER) ungueltig(`Höchstens ${ANZAHL_FELDER} Spielfelder.`);
+  if (!Array.isArray(body.felder) || body.felder.length > spiel.felder) ungueltig(`Höchstens ${spiel.felder} Spielfelder.`);
 
   const felder = body.felder.map((f, i) => {
     const nums = Array.isArray(f?.nums) ? f.nums : [];
-    if (nums.length === 0) return { nums: [], sz: null };
-    if (nums.length !== 6) ungueltig(`Spielfeld ${i + 1}: genau 6 Zahlen eingeben.`);
-    if (!nums.every((n) => Number.isInteger(n) && n >= 1 && n <= 49)) ungueltig(`Spielfeld ${i + 1}: Zahlen von 1 bis 49.`);
-    if (new Set(nums).size !== 6) ungueltig(`Spielfeld ${i + 1}: keine Zahl doppelt.`);
-    if (!Number.isInteger(f.sz) || f.sz < 0 || f.sz > 9) ungueltig(`Spielfeld ${i + 1}: Superzahl von 0 bis 9.`);
-    return { nums: [...nums].sort((a, b) => a - b), sz: f.sz };
+    if (nums.length === 0) return leeresFeld(spiel);
+    if (nums.length !== zahlen) ungueltig(`Spielfeld ${i + 1}: genau ${zahlen} Zahlen eingeben.`);
+    if (!nums.every((n) => Number.isInteger(n) && n >= 1 && n <= max)) ungueltig(`Spielfeld ${i + 1}: Zahlen von 1 bis ${max}.`);
+    if (new Set(nums).size !== zahlen) ungueltig(`Spielfeld ${i + 1}: keine Zahl doppelt.`);
+    const sortiert = [...nums].sort((a, b) => a - b);
+    if (!euro) {
+      if (!Number.isInteger(f.sz) || f.sz < extra.min || f.sz > extra.max) ungueltig(`Spielfeld ${i + 1}: Superzahl von ${extra.min} bis ${extra.max}.`);
+      return { nums: sortiert, sz: f.sz };
+    }
+    const eurozahlen = Array.isArray(f.euro) ? f.euro : [];
+    if (eurozahlen.length !== extra.anzahl) ungueltig(`Spielfeld ${i + 1}: genau ${extra.anzahl} Eurozahlen eingeben.`);
+    if (!eurozahlen.every((n) => Number.isInteger(n) && n >= extra.min && n <= extra.max)) ungueltig(`Spielfeld ${i + 1}: Eurozahlen von ${extra.min} bis ${extra.max}.`);
+    if (new Set(eurozahlen).size !== extra.anzahl) ungueltig(`Spielfeld ${i + 1}: keine Eurozahl doppelt.`);
+    return { nums: sortiert, euro: [...eurozahlen].sort((a, b) => a - b) };
   });
-  if (!felder.some((f) => f.nums.length)) ungueltig('Mindestens ein Spielfeld mit 6 Zahlen und Superzahl eingeben.');
+  if (!felder.some((f) => f.nums.length)) {
+    ungueltig(`Mindestens ein Spielfeld mit ${zahlen} Zahlen und ${euro ? `${extra.anzahl} Eurozahlen` : 'Superzahl'} eingeben.`);
+  }
 
-  const losnummer = String(body.losnummer ?? '').replace(/\s+/g, '');
-  const spiel77 = body.spiel77 === true;
-  const super6 = body.super6 === true;
+  // Scheinnummer, Spiel 77 und Super 6 gibt es nur bei 6aus49
+  const losnummer = spiel.zusatz ? String(body.losnummer ?? '').replace(/\s+/g, '') : '';
+  const spiel77 = spiel.zusatz && body.spiel77 === true;
+  const super6 = spiel.zusatz && body.super6 === true;
   if (losnummer && !/^\d{7}$/.test(losnummer)) ungueltig('Die Scheinnummer hat 7 Ziffern.');
   if ((spiel77 || super6) && !losnummer) ungueltig('Für Spiel 77 und Super 6 wird die Scheinnummer (7 Ziffern) gebraucht.');
 
@@ -82,7 +96,7 @@ export function pruefeKorrektur(body) {
 
 // ---- App ----
 
-export function erstelleApp({ store, sync, jetzt = () => Date.now(), sicheresCookie = true, publicDir }) {
+export function erstelleApp({ store, sync, spiel = SPIELE.lotto, jetzt = () => Date.now(), sicheresCookie = true, publicDir }) {
   const app = express();
   app.disable('x-powered-by');
   app.set('trust proxy', 1);
@@ -100,6 +114,8 @@ export function erstelleApp({ store, sync, jetzt = () => Date.now(), sicheresCoo
   });
 
   app.get('/healthz', (req, res) => res.type('text/plain').send('ok'));
+  // Welches Spiel diese Instanz rechnet (Name, Felder), damit schon das Anmeldeformular passend beschriftet ist
+  app.get('/api/spiel', (req, res) => res.json(oeffentlich(spiel)));
   app.use(express.json({ limit: '50kb' }));
 
   // Schutz vor fremden Seiten: Schreibzugriffe nur von der eigenen Adresse
@@ -214,12 +230,13 @@ export function erstelleApp({ store, sync, jetzt = () => Date.now(), sicheresCoo
     const heute = berlinHeute(jetzt());
     const korrekturen = store.korrekturen();
     const abrechnung = baueAbrechnung({
-      ziehungen: store.ziehungen(), scheine: store.scheine(), startDatum, heute, korrekturen, spieler,
+      ziehungen: store.ziehungen(), scheine: store.scheine(), startDatum, heute, korrekturen, spieler, spiel,
     });
     return {
       rolle,
+      spiel: oeffentlich(spiel),
       heute,
-      naechsterSpieltag: naechsterSpieltag(jetzt()),
+      naechsterSpieltag: naechsterSpieltag(jetzt(), spiel),
       einstellungen: { spieler, startDatum },
       scheine: store.scheine(),
       korrekturen,
@@ -245,7 +262,7 @@ export function erstelleApp({ store, sync, jetzt = () => Date.now(), sicheresCoo
   }
 
   app.post('/api/scheine', nurAdmin, (req, res) => {
-    const s = pruefeSchein(req.body);
+    const s = pruefeSchein(req.body, spiel);
     pruefeEindeutig(s);
     store.legeScheinAn(s);
     res.json(zustand(req.sitzung.rolle));
@@ -254,7 +271,7 @@ export function erstelleApp({ store, sync, jetzt = () => Date.now(), sicheresCoo
   app.put('/api/scheine/:id', nurAdmin, (req, res) => {
     const id = Number(req.params.id);
     if (!store.schein(id)) return res.status(404).json({ error: 'Schein nicht gefunden.' });
-    const s = pruefeSchein(req.body);
+    const s = pruefeSchein(req.body, spiel);
     pruefeEindeutig(s, id);
     store.aktualisiereSchein(id, s);
     res.json(zustand(req.sitzung.rolle));

@@ -122,7 +122,7 @@ await test('Abgleich: Ziehungen durchblättern, Treffer und Zusatzlotterien sich
   await page.selectOption('#abgleich-datum', optionen[optionen.length - 1]);
   assert.match(await text(page, '#abgleich .abgleich-kopf h2'), /Abgleich:/);
   // Treffer sind markiert, wenn es welche gibt: Anzahl grüner Kugeln entspricht den Treffern der Texte
-  const treffer = await page.locator('#abgleich .tippschein .kugel.treffer:not(.sz)').count();
+  const treffer = await page.locator('#abgleich .tippschein .kugel.treffer:not(.sz):not(.euro)').count();
   const summeTexte = await page.locator('#abgleich .feld .ergebnis').evaluateAll((els) =>
     els.reduce((s, e) => s + Number(/(\d) Treffer/.exec(e.innerText)?.[1] ?? 0), 0));
   assert.equal(treffer, summeTexte, 'markierte Kugeln und genannte Treffer stimmen überein');
@@ -147,7 +147,7 @@ await test('Verlauf: Klick auf eine Zeile wählt die Ziehung, „Alle anzeigen�
 await test('Dialog: Tippschein zeigt die gespeicherten Daten und schließt mit Abbrechen', async ({ page }) => {
   await page.click('#knopf-schein');
   assert.equal(await page.isVisible('#dialog-schein'), true);
-  assert.equal(await page.locator('#schein-felder tr').count(), 8);
+  assert.ok((await page.locator('#schein-felder tr').count()) >= 8);
   assert.match(await page.inputValue('#schein-kosten'), /^\d/);
   await page.click('#dialog-schein [data-schliessen]');
   assert.equal(await page.isVisible('#dialog-schein'), false);
@@ -234,17 +234,39 @@ await test('Schreiben: Korrekturbuchung anlegen, in den Summen sehen, wieder lö
 }, { rolle: 'admin' });
 
 await test('Schreiben: Tippschein-Dialog meldet falsche Eingaben verständlich', async ({ page }) => {
+  const sp = await page.evaluate(() => fetch('/api/spiel').then((r) => r.json()));
+  const euro = sp.feld.extra.art === 'euro';
+  const { zahlen } = sp.feld;
   await page.click('#knopf-schein');
   await page.fill('#sf-nums-0', '1 2 3');
-  await page.fill('#sf-sz-0', '5');
+  if (euro) await page.fill('#sf-euro-0', '1 2');
+  else await page.fill('#sf-sz-0', '5');
   await page.click('#schein-speichern');
   await page.waitForFunction(() => document.getElementById('schein-fehler').textContent.length > 0);
-  assert.match(await text(page, '#schein-fehler'), /genau 6 Zahlen/);
-  await page.fill('#sf-nums-0', '1 2 3 4 5 5');
+  assert.match(await text(page, '#schein-fehler'), new RegExp(`genau ${zahlen} Zahlen`));
+  // eine Zahl doppelt
+  await page.fill('#sf-nums-0', [...Array.from({ length: zahlen - 1 }, (_, i) => i + 1), zahlen - 1].join(' '));
   await page.click('#schein-speichern');
   await page.waitForFunction(() => /doppelt/.test(document.getElementById('schein-fehler').textContent));
   assert.equal(await page.isVisible('#dialog-schein'), true, 'Dialog bleibt offen');
 }, { rolle: 'admin', erwartet: /status of 400/ });
+
+await test('Spiel: Beschriftung und Eingabemaske passen zum Spiel dieser Instanz', async ({ page }) => {
+  const sp = await page.evaluate(() => fetch('/api/spiel').then((r) => r.json()));
+  assert.equal(await text(page, '#marke-titel'), sp.titel);
+  assert.equal(await text(page, '#marke-untertitel'), sp.untertitel);
+  assert.equal(await page.title(), sp.seitentitel);
+  const euro = sp.feld.extra.art === 'euro';
+  await page.click('#knopf-schein');
+  assert.equal(await page.locator('#schein-felder tr').count(), sp.felder);
+  assert.equal(await page.isVisible('#schein-losnummer'), sp.zusatz, 'Scheinnummer nur bei 6aus49');
+  assert.equal(await page.isVisible('#schein-spiel77'), sp.zusatz);
+  assert.equal(await page.locator('#sf-euro-0').count(), euro ? 1 : 0);
+  assert.equal(await page.locator('#sf-sz-0').count(), euro ? 0 : 1);
+  assert.match(await page.locator('#schein-kopf-zahlen').textContent(), new RegExp(`^${sp.feld.zahlen} Zahlen \\(1–${sp.feld.max}\\)`));
+  await page.keyboard.press('Escape');
+  assert.equal(await page.locator('#einst-start-label').textContent(), `Erster Spieltag (${sp.serie})`);
+}, { rolle: 'admin' });
 
 await test('Schreiben: Admin ändert die Mitspieler und stellt sie wieder her', async ({ page }) => {
   await page.click('#knopf-einstellungen');

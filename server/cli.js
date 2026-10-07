@@ -6,8 +6,10 @@
  */
 import path from 'node:path';
 import { oeffneDatenbank, erstelleStore, hashPassword } from './db.js';
+import { waehleSpiel } from './spiele.js';
 
-const store = erstelleStore(oeffneDatenbank(path.join(process.env.DATA_DIR || '/data', 'tipp.db')));
+const spiel = waehleSpiel(process.env.SPIEL || 'lotto');
+const store = erstelleStore(oeffneDatenbank(path.join(process.env.DATA_DIR || '/data', 'tipp.db'), spiel), spiel);
 const [befehl, argument] = process.argv.slice(2);
 
 if (befehl === 'passwort' || befehl === 'admin-passwort') {
@@ -22,10 +24,10 @@ if (befehl === 'passwort' || befehl === 'admin-passwort') {
   store.beendeSitzungen(admin ? 'admin' : 'mitglied');
   console.log(`${admin ? 'Admin-Passwort' : 'Passwort der Mitglieder'} geändert, die zugehörigen Anmeldungen sind beendet.`);
 } else if (befehl === 'status') {
-  const ziehungen = store.ziehungen().filter((z) => z.serie === 'Samstag');
+  const ziehungen = store.ziehungen().filter((z) => z.serie === spiel.serie);
   const zeit = (ms) => (ms ? new Date(Number(ms)).toISOString() : '-');
   console.log(`Einstellungen: ${JSON.stringify(store.einstellungen())}`);
-  console.log(`Scheine: ${store.scheine().length}, Samstagsziehungen: ${ziehungen.length} (davon endgültig: ${ziehungen.filter((z) => z.quoten).length})`);
+  console.log(`Spiel: ${spiel.name}, Scheine: ${store.scheine().length}, Ziehungen am ${spiel.serie}: ${ziehungen.length} (davon endgültig: ${ziehungen.filter((z) => z.quoten).length})`);
   console.log(`Letzter Abruf: ${zeit(store.meta('sync_versuch'))}, letzter Erfolg: ${zeit(store.meta('sync_erfolg'))}, Fehler: ${store.meta('sync_fehler') || '-'}`);
 } else {
   console.error('Befehle: passwort <neues-passwort> | admin-passwort <neues-passwort> | status');

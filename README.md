@@ -1,10 +1,15 @@
 # Tippgemeinschaft
 
-Lotto-Tippgemeinschaft für 6aus49, Spiel 77 und Super 6: Die App holt die amtlichen Ziehungen samt Quoten,
-gleicht sie mit dem Tippschein ab und rechnet Gewinne, Kosten und Bilanz je Mitspieler aus.
+Lotto-Tippgemeinschaft für **6aus49** (mit Spiel 77 und Super 6) und **Eurojackpot**: Die App holt die amtlichen Ziehungen
+samt Quoten, gleicht sie mit dem Tippschein ab und rechnet Gewinne, Kosten und Bilanz je Mitspieler aus.
 
 Dieser Branch (`coolify`) ist die Fassung für den eigenen Server (Coolify, Node + SQLite). Die ursprüngliche
 PHP/MySQL-Fassung für Strato liegt unverändert auf dem Standard-Branch.
+
+**Eine Codebasis, zwei Instanzen:** Welches Spiel eine Instanz rechnet, bestimmt die Umgebungsvariable `SPIEL`
+(`lotto`, Standard, oder `eurojackpot`). Jede Instanz hat eigenes Volume, eigene Passwörter, eigene Mitspieler und Adresse.
+Alles Spielspezifische (Zahlenbereiche, Wochentag, Uhrzeiten, Gewinnklassen, Quellen) steht in `server/spiele.js` und
+`server/rules.js`.
 
 ## Die Idee: Tatsachen speichern, alles andere rechnen
 
@@ -34,10 +39,10 @@ Korrekturbuchungen. Gewinne, Kosten und Bilanz berechnet `server/rules.js` bei j
 
 | | |
 | --- | --- |
-| Adresse | https://lotto.stephan-kleikamp.de |
+| Adressen | 6aus49: https://lotto.stephan-kleikamp.de (Samstag, 8 Felder, Spiel 77, Super 6) · Eurojackpot: https://eurojackpot.stephan-kleikamp.de (Freitag, 5 aus 50 + 2 aus 12, bis zu 12 Felder) |
 | Dienst | Node 24, Express 5, SQLite (`node:sqlite`), keine weiteren Abhängigkeiten, kein Build-Schritt |
 | Daten | Volume auf `/data`: `tipp.db`, tägliche Sicherungen in `/data/backups` (7 Tage, ab 3 Uhr) |
-| Variablen | `INITIAL_PASSWORD` (Mitglieder) und `ADMIN_PASSWORD` (Admin): Passwörter beim ersten Start. Danach zählen nur die Hashwerte in der Datenbank, geändert wird in den Einstellungen oder per CLI |
+| Variablen | `SPIEL`: `lotto` (Standard) oder `eurojackpot`. `INITIAL_PASSWORD` (Mitglieder) und `ADMIN_PASSWORD` (Admin): Passwörter beim ersten Start. Danach zählen nur die Hashwerte in der Datenbank, geändert wird in den Einstellungen oder per CLI |
 | Zeitplan | Ab Samstag 19:45 Uhr fragt der Server alle 15 bis 20 Minuten nach, bis alle Quoten der Ziehung da sind (laut Stichprobe Montagmorgen), danach nur noch einmal am Tag. „Jetzt prüfen“ löst einen Abruf von Hand aus (30 Sekunden Pause). Eine offene Seite frischt sich alle 5 Minuten selbst auf |
 | Verwaltung | im Container: `node server/cli.js passwort <neues>` (Mitglieder), `admin-passwort <neues>` und `status` |
 
@@ -51,13 +56,16 @@ Korrekturbuchungen. Gewinne, Kosten und Bilanz berechnet `server/rules.js` bei j
 - Kein Zugriffsprotokoll, keine externen Schriften oder Skripte, `noindex`. Strenge CSP, Schreibzugriffe nur von der
   eigenen Adresse.
 - Sicherung zurückspielen: Datei aus `/data/backups` als `/data/tipp.db` einsetzen (und `tipp.db-wal`/`-shm` löschen).
-- Gespielt wird nur samstags. Mittwochsziehungen werden nicht geholt.
+- Gespielt wird nur am Spieltag des Spiels (6aus49 samstags, Eurojackpot freitags). Die Ziehungen der anderen Tage
+  (Mittwoch beziehungsweise Dienstag) werden nicht geholt.
+- Eurojackpot hat zwölf Gewinnklassen (5+2 bis 2+1), alle schwanken mit der Zahl der Gewinner. Es gibt dort keine
+  Scheinnummer, kein Spiel 77, kein Super 6 und kein Archiv als dritte Quelle.
 
 ## Datenquellen
 
 | Quelle | Wofür |
 | --- | --- |
-| `https://www.lotto.de/api/stats/entities.lotto/history/<Jahr>` und `/draws/<Datum>` | alle Ziehungstage, Zahlen, Spiel 77, Super 6 und Quoten. Schnittstelle der lotto.de-Webseite, nicht dokumentiert |
+| `https://www.lotto.de/api/stats/entities.lotto/history/<Jahr>` und `/draws/<Datum>` (Eurojackpot: `entities.eurojackpot`, `/draw/<Datum>`) | alle Ziehungstage, Zahlen, Spiel 77, Super 6 und Quoten. Schnittstelle der lotto.de-Webseite, nicht dokumentiert |
 | `https://services.lotto-hessen.de/spielinformationen/…` | nur die letzte Ziehung: Gegenprüfung und Ersatz |
 | `https://johannesfriedrich.github.io/LottoNumberArchive/` | Zahlen seit 1955 ohne Quoten, letzter Notnagel |
 
@@ -70,8 +78,9 @@ Der Server fragt nur Gewinnzahlen ab. Es werden keine Angaben der Tippgemeinscha
 ```bash
 npm install
 INITIAL_PASSWORD=geheim-1234 DATA_DIR=.data PORT=3000 COOKIE_INSECURE=1 npm start
-npm test                                    # 59 Tests: Regeln, Quellen, Abruf, Sicherung, Rollen, Schnittstelle
-E2E_PASSWORD=geheim-1234 E2E_ADMIN_PASSWORD=... npm run e2e -- http://127.0.0.1:3000/ [--schreiben]   # Browser-Tests (Playwright)
+SPIEL=eurojackpot INITIAL_PASSWORD=... ADMIN_PASSWORD=... DATA_DIR=.data-euro PORT=3001 COOKIE_INSECURE=1 npm start   # Eurojackpot-Instanz
+npm test                                    # 78 Tests: Regeln beider Spiele, Quellen, Abruf, Sicherung, Rollen, Schnittstelle
+E2E_PASSWORD=geheim-1234 E2E_ADMIN_PASSWORD=... npm run e2e -- http://127.0.0.1:3000/ [--schreiben]   # 14 Browser-Tests (Playwright), erkennen das Spiel selbst
 ```
 
 Die E2E-Tests mit `--schreiben` legen Buchungen an und löschen sie wieder. Gegen die echte Instanz nur ohne diese Option
