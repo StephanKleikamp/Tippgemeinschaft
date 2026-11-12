@@ -4,6 +4,8 @@
  * höchstens 10 Minuten im Arbeitsspeicher gehalten (siehe Datenschutzerklärung).
  */
 import crypto from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
 import express from 'express';
 import { hashPassword, verifyPassword, sha256 } from './db.js';
 import { baueAbrechnung, baueZahlungen, ziehungsdatumBis, betragBis } from './rules.js';
@@ -103,7 +105,7 @@ export function erstelleApp({ store, sync, spiel = SPIELE.lotto, jetzt = () => D
 
   app.use((req, res, next) => {
     res.setHeader('Content-Security-Policy',
-      "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; "
+      "default-src 'self'; script-src 'self' https://stats.stephan-kleikamp.de; style-src 'self'; img-src 'self' data:; connect-src 'self' https://stats.stephan-kleikamp.de; "
       + "object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'");
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Referrer-Policy', 'no-referrer');
@@ -371,6 +373,20 @@ export function erstelleApp({ store, sync, spiel = SPIELE.lotto, jetzt = () => D
   app.all('/api/*splat', (req, res) => res.status(404).json({ error: 'Unbekannte Adresse.' }));
 
   // ---- Seiten ----
+
+  // Startseite mit der Kennung dieser Instanz für die Seitenzählung (lotto oder eurojackpot; die Datei enthält den Platzhalter __TRACKER_APP__)
+  let startseite;
+  const ladeStartseite = () => {
+    if (startseite === undefined) {
+      try { startseite = fs.readFileSync(path.join(publicDir, 'index.html'), 'utf8').replaceAll('__TRACKER_APP__', spiel.id); } catch { startseite = null; }
+    }
+    return startseite;
+  };
+  app.get(['/', '/index.html'], (req, res, next) => {
+    const html = ladeStartseite();
+    if (!html) return next();
+    res.type('html').set('Cache-Control', 'no-cache').send(html);
+  });
 
   app.use(express.static(publicDir, { index: 'index.html', maxAge: 0, etag: true }));
 
